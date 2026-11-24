@@ -1,0 +1,9 @@
+node_modules
+dist
+dev-dist
+.env
+.env.local
+*.log
+# Configuration du serveur : mots de passe et clé d'API
+deploy.env
+server/node_modules

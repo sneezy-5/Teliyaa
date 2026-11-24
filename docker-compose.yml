@@ -1,0 +1,47 @@
+# Teliyaa sur ton Docker Swarm : uniquement l'app (API + site).
+# - Base : PostgreSQL via PgBouncer (infra_pgbouncer:6432) sur le réseau « whatsapp-network »
+# - Nginx tourne directement sur la machine et renvoie vers http://127.0.0.1:3100
+#
+# 1. Construire l'image (sur le nœud manager) :
+#      docker build --build-arg PUBLIC_URL=https://teliyaa.com -t teliyaa:latest .
+# 2. Déployer / mettre à jour :
+#      docker stack deploy -c docker-compose.yml teliyaa
+# 3. Logs :
+#      docker service logs -f teliyaa_app
+
+version: '3.8'
+
+services:
+  app:
+    image: teliyaa:latest
+    env_file: deploy.env
+    networks:
+      - whatsapp-network
+    ports:
+      # Mode « host » : le port s'ouvre sur la machine où tourne le service (celle de Nginx).
+      # Bloque l'accès depuis internet à ce port : voir README (règle DOCKER-USER).
+      - target: 3000
+        published: 3100
+        protocol: tcp
+        mode: host
+    deploy:
+      # Une seule instance, sur le nœud manager (là où est Nginx) :
+      # les limites anti-abus sont gardées en mémoire.
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+        delay: 5s
+      update_config:
+        # Port « host » : l'ancienne instance doit s'arrêter avant que la nouvelle prenne le port.
+        order: stop-first
+        failure_action: rollback
+      resources:
+        limits:
+          memory: 384M
+
+networks:
+  whatsapp-network:
+    external: true

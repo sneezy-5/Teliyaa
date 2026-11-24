@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test : ouvrir Wave depuis le navigateur</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; max-width: 480px; color: #111827; }
+    h1 { font-size: 20px; }
+    p { color: #6b7280; line-height: 1.45; font-size: 14px; }
+    a { display: block; margin: 14px 0 4px; padding: 16px; border-radius: 14px; background: #4338ca; color: #fff; text-decoration: none; font-weight: 600; text-align: center; }
+    code { display: block; font-size: 11px; word-break: break-all; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <!-- Page de test, à supprimer avant la mise en ligne. Ouvrir sur un téléphone Android avec Chrome. -->
+  <h1>Ouvrir Wave depuis le navigateur</h1>
+  <p>Touche chaque bouton, puis reviens ici. Pour chacun, note si Wave s'ouvre, si le Play Store s'ouvre, ou s'il ne se passe rien.</p>
+
+  <a href="intent://#Intent;package=com.wave.personal;end">Essai A : code collé (sans lien de secours)</a>
+  <code>intent://#Intent;package=com.wave.personal;end</code>
+
+  <a href="intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.wave.personal;end">Essai B : ancien lien de tonapp (sans lien de secours)</a>
+  <code>intent:#Intent;action=MAIN;category=LAUNCHER;package=com.wave.personal;end</code>
+
+  <p>Si l'un des deux ouvre Wave, dis-moi lequel : je le remets dans tonapp pour la version web.</p>
+</body>
+</html>
