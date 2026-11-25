@@ -152,12 +152,11 @@ const deleteLink = (l: ShareLink) => run(() => api.deleteShareLink(l.id));
           </div>
           <p class="muted small">Elles voient ton profil dans Teliyaa, une fois connectées.</p>
 
-          <form class="share-add" @submit.prevent="addGrant(q)">
-            <label class="search grow">
-              <Icon name="search" />
-              <input v-model="q" placeholder="@pseudo de la personne" autocapitalize="none" autocorrect="off" aria-label="@pseudo à ajouter" />
-            </label>
-            <button class="btn share-add-btn" :disabled="busy || !q.trim()">Ajouter</button>
+          <!-- Champ sur toute la largeur ; le bouton « Ajouter » apparaît dedans quand on tape -->
+          <form class="search share-add" @submit.prevent="addGrant(q)">
+            <Icon name="search" />
+            <input v-model="q" placeholder="@pseudo de la personne" autocapitalize="none" autocorrect="off" aria-label="@pseudo à ajouter" />
+            <button v-if="q.trim()" class="share-add-btn" :disabled="busy">Ajouter</button>
           </form>
           <ul v-if="suggestions.length" class="list">
             <li v-for="p in suggestions" :key="p.username">
