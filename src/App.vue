@@ -18,14 +18,21 @@ watchAppSwitches();
 const AdminPanel = defineAsyncComponent(() => import('./pages/Admin.vue'));
 const adminOpen = ref(false);
 
+/**
+ * Ctrl+Maj+A (Cmd+Maj+A sur Mac), ou Alt+Maj+A si le navigateur garde Ctrl+Maj+A pour lui (Chrome).
+ * Sur Mac, Alt transforme la lettre (« Å » en QWERTY, « Æ » en AZERTY) : on les accepte aussi.
+ */
 function onKey(e: KeyboardEvent) {
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a' && session.user?.is_admin) {
-    e.preventDefault();
-    adminOpen.value = !adminOpen.value;
-  }
+  const isA = ['a', 'å', 'æ'].includes(e.key.toLowerCase()) || e.code === 'KeyA';
+  if (!isA || !e.shiftKey || !(e.ctrlKey || e.metaKey || e.altKey)) return;
+  if (!session.user?.is_admin) return;
+  e.preventDefault();
+  e.stopPropagation();
+  adminOpen.value = !adminOpen.value;
 }
-onMounted(() => window.addEventListener('keydown', onKey));
-onUnmounted(() => window.removeEventListener('keydown', onKey));
+// Phase de capture : on reçoit la touche avant le reste de la page
+onMounted(() => window.addEventListener('keydown', onKey, true));
+onUnmounted(() => window.removeEventListener('keydown', onKey, true));
 
 // Fermé dès qu'on se déconnecte, ou que l'app se reverrouille (PIN)
 watch(
