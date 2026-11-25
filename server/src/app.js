@@ -154,6 +154,8 @@ async function serveStatic(req, res, pathname) {
     // Profil public : aperçu du lien dans WhatsApp, Facebook… (nom de la personne)
     const profileMatch = rel.match(/^\/u\/([^/]+)\/?$/);
     if (profileMatch) return serveProfilePage(req, res, file, profileMatch[1]);
+    // Lien secret : jamais dans Google, et aucun nom dans l'aperçu
+    if (/^\/p\//.test(rel)) return serveProfilePage(req, res, file, null);
   }
 
   const ext = path.extname(file);
@@ -178,10 +180,12 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 async function serveProfilePage(req, res, indexFile, rawUsername) {
   let html = await readFile(indexFile, 'utf8');
   let name = null;
-  try {
+  if (rawUsername) try {
     const username = normalizeUsername(rawUsername); // déjà décodé par serveStatic
     const { rows } = await pool.query(
-      `select p.full_name from profiles p join users u on u.id = p.id where p.username = $1 and u.blocked_at is null`,
+      // Profil privé : pas de nom dans l'aperçu du lien
+      `select p.full_name from profiles p join users u on u.id = p.id
+        where p.username = $1 and u.blocked_at is null and p.visibility = 'public'`,
       [username]
     );
     name = rows[0]?.full_name ?? null;

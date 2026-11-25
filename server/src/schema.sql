@@ -125,6 +125,37 @@ create table if not exists suspects (
 );
 create index if not exists suspects_status_idx on suspects (status, updated_at desc);
 
+-- ---------- Qui peut voir mon profil ----------
+-- public : tout le monde avec le lien ; private : seulement les personnes choisies et les liens secrets
+alter table profiles add column if not exists visibility text not null default 'public';
+do $$ begin
+  alter table profiles add constraint profiles_visibility_check check (visibility in ('public', 'private'));
+exception when duplicate_object then null;
+end $$;
+
+-- Personnes autorisées à voir un profil privé (comptes Teliyaa), avec une date de fin facultative
+create table if not exists profile_grants (
+  owner_id uuid not null references profiles (id) on delete cascade,
+  viewer_id uuid not null references profiles (id) on delete cascade,
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  primary key (owner_id, viewer_id),
+  check (owner_id <> viewer_id)
+);
+create index if not exists profile_grants_viewer_idx on profile_grants (viewer_id);
+
+-- Liens secrets (teliyaa.com/p/…) : ouvrent le profil sans compte, jusqu'à leur date de fin.
+-- Le jeton est gardé tel quel pour que son propriétaire puisse le recopier : il ne donne accès
+-- qu'à ce que montre déjà la page du profil (nom et comptes visibles).
+create table if not exists profile_links (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references profiles (id) on delete cascade,
+  token text not null unique,
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists profile_links_owner_idx on profile_links (owner_id);
+
 -- Compteur anti-abus de la recherche de contacts
 create table if not exists contact_lookups (
   id bigint generated always as identity primary key,

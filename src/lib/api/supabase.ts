@@ -32,8 +32,23 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     return u;
   }
 
+  const notHere = () => Promise.reject(new Error("Cette fonction n'est pas disponible dans cette version."));
+
   return {
     mode: 'supabase',
+
+    // Profil privé : seulement avec le serveur Teliyaa
+    async getSharing() {
+      return { visibility: 'public', grants: [], links: [] };
+    },
+    setVisibility: notHere,
+    addGrant: notHere,
+    removeGrant: notHere,
+    createShareLink: notHere,
+    deleteShareLink: notHere,
+    async getSharedProfile() {
+      return null;
+    },
 
     async getSessionUser() {
       const { data } = await sb.auth.getSession();

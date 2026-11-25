@@ -118,6 +118,8 @@ function publicProfile(db: Db, p: Profile, onlyIds?: string[]): PublicProfile {
   return { username: p.username, full_name: p.full_name, verified: p.verified, aliases: sortAliases(aliases).map(toPublicAlias) };
 }
 
+const demoUnavailable = () => Promise.reject(new Error("Pas disponible en mode démo."));
+
 export function resetDemo() {
   save(seed());
   listeners.forEach((l) => l(null));
@@ -232,6 +234,19 @@ export const demoApi: Api = {
     const db = load();
     const me = db.session;
     return !db.profiles.some((p) => p.username === username && p.id !== me);
+  },
+
+  // Profil privé : pas en mode démo (tout reste public)
+  async getSharing() {
+    return { visibility: 'public', grants: [], links: [] };
+  },
+  setVisibility: demoUnavailable,
+  addGrant: demoUnavailable,
+  removeGrant: demoUnavailable,
+  createShareLink: demoUnavailable,
+  deleteShareLink: demoUnavailable,
+  async getSharedProfile() {
+    return null;
   },
 
   async listMyAliases() {

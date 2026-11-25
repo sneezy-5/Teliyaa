@@ -59,7 +59,10 @@ const copyLink = async () => toast((await copyText(link.value)) ? 'Lien copié' 
       <button type="button" class="home-link" aria-label="Copier mon lien" @click="copyLink">
         {{ prettyLink(link) }} <Icon name="copy" :size="16" />
       </button>
-      <span class="muted small">Scanne ce code pour me payer avec n'importe quelle app</span>
+      <RouterLink v-if="profile.visibility === 'private'" to="/profile/visibility" class="pill info">
+        <Icon name="lock" :size="13" /> Profil privé : seulement qui tu choisis
+      </RouterLink>
+      <span v-else class="muted small">Scanne ce code pour me payer avec n'importe quelle app</span>
     </section>
 
     <nav :class="['quick-actions', { four: FEATURES.paymentRequests }]" aria-label="Actions rapides">

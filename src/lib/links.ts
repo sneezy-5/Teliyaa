@@ -10,6 +10,8 @@ function base(): string {
 
 export const profileLink = (username: string) => `${base()}/u/${username}`;
 export const requestLink = (code: string) => `${base()}/r/${code}`;
+/** Lien secret vers mon profil (ouvre même un profil privé, jusqu'à sa date de fin) */
+export const secretLink = (token: string) => `${base()}/p/${token}`;
 
 /** Lien affiché (sans https://) */
 export const prettyLink = (url: string) => url.replace(/^https?:\/\//, '');

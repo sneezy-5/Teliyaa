@@ -34,10 +34,13 @@ const routes: RouteRecordRaw[] = [
   { path: '/send', component: () => import('./pages/Send.vue'), meta: { private: true } },
   { path: '/send/:username', component: () => import('./pages/SendTo.vue'), meta: { private: true } },
   { path: '/profile', component: () => import('./pages/Profile.vue'), meta: { private: true } },
+  { path: '/profile/visibility', component: () => import('./pages/Visibility.vue'), meta: { private: true } },
   // Back-office : pas d'adresse, il s'ouvre seulement avec Ctrl+Maj+A (voir App.vue)
 
   // Pages publiques : sans compte
   { path: '/u/:username', component: () => import('./pages/PublicProfile.vue') },
+  // Lien secret (profil privé partagé pour un temps)
+  { path: '/p/:token', component: () => import('./pages/PublicProfile.vue') },
   { path: '/confidentialite', component: () => import('./pages/Privacy.vue') },
   { path: '/conditions', component: () => import('./pages/Terms.vue') },
 
@@ -57,7 +60,7 @@ const TITLES: Record<string, string> = {
 };
 router.afterEach((to) => {
   if (TITLES[to.path]) document.title = TITLES[to.path];
-  else if (!to.path.startsWith('/u/')) document.title = 'Teliyaa';
+  else if (!to.path.startsWith('/u/') && !to.path.startsWith('/p/')) document.title = 'Teliyaa';
 });
 
 /** Connecté + profil créé, sinon redirection vers la bonne étape. */

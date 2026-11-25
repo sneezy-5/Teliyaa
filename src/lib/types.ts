@@ -12,6 +12,34 @@ export interface Profile {
   findable_by_phone: boolean;
   /** App utilisée en priorité pour payer (id du catalogue providers) */
   favorite_provider: string | null;
+  /** public : tout le monde avec le lien ; private : seulement les personnes choisies et les liens secrets */
+  visibility?: Visibility;
+}
+
+export type Visibility = 'public' | 'private';
+/** Durée d'un accès : 1 h, 24 h, 7 jours, 30 jours ou sans fin */
+export type ShareDuration = '1h' | '24h' | '7d' | '30d' | 'forever';
+
+/** Personne autorisée à voir mon profil privé */
+export interface ProfileGrant {
+  username: string;
+  full_name: string;
+  expires_at: string | null;
+  created_at: string;
+}
+
+/** Lien secret teliyaa.com/p/… */
+export interface ShareLink {
+  id: string;
+  token: string;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface Sharing {
+  visibility: Visibility;
+  grants: ProfileGrant[];
+  links: ShareLink[];
 }
 
 export interface Alias {
@@ -64,6 +92,8 @@ export interface PublicProfile {
   full_name: string;
   verified: boolean;
   aliases: PublicAlias[];
+  /** Ouvert avec un lien secret : date de fin du lien (null = sans fin) */
+  shared_until?: string | null;
 }
 
 export interface PublicAlias {

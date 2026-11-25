@@ -7,7 +7,11 @@ import type {
   PublicProfile,
   PublicRequest,
   RequestStatus,
-  SessionUser
+  SessionUser,
+  ShareDuration,
+  ShareLink,
+  Sharing,
+  Visibility
 } from '../types';
 
 export interface AliasInput {
@@ -59,6 +63,16 @@ export interface Api {
   getMyProfile(): Promise<Profile | null>;
   saveMyProfile(input: Pick<Profile, 'username' | 'full_name'> & Partial<Pick<Profile, 'discoverable' | 'findable_by_phone' | 'favorite_provider'>>): Promise<Profile>;
   isUsernameAvailable(username: string): Promise<boolean>;
+
+  // Qui peut voir mon profil
+  getSharing(): Promise<Sharing>;
+  setVisibility(visibility: Visibility): Promise<Sharing>;
+  addGrant(username: string, duration: ShareDuration): Promise<Sharing>;
+  removeGrant(username: string): Promise<Sharing>;
+  createShareLink(duration: ShareDuration): Promise<{ link: ShareLink; sharing: Sharing }>;
+  deleteShareLink(id: string): Promise<Sharing>;
+  /** Profil ouvert avec un lien secret (null : lien expiré ou supprimé) */
+  getSharedProfile(token: string): Promise<PublicProfile | null>;
 
   // Alias
   listMyAliases(): Promise<Alias[]>;

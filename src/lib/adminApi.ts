@@ -128,6 +128,11 @@ export const EVENT_LABELS: Record<string, string> = {
   alias_update: 'Compte modifié',
   alias_delete: 'Compte supprimé',
   profile_update: 'Profil modifié',
+  visibility_change: 'Visibilité du profil changée',
+  grant_add: 'Personne autorisée',
+  grant_remove: 'Personne retirée',
+  link_create: 'Lien secret créé',
+  link_delete: 'Lien secret supprimé',
   account_delete: 'Compte supprimé (utilisateur)',
   admin_block: 'Blocage (admin)',
   admin_unblock: 'Déblocage (admin)'

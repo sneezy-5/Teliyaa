@@ -1,4 +1,4 @@
-import type { Alias, ContactMatch, Profile, PublicProfile, SessionUser } from '../types';
+import type { Alias, ContactMatch, Profile, PublicProfile, SessionUser, ShareLink, Sharing } from '../types';
 import type { Api } from './types';
 
 /**
@@ -126,6 +126,40 @@ export function createServerApi(baseUrl: string): Api {
 
     async isUsernameAvailable(username) {
       return (await call<{ available: boolean }>('GET', `/api/usernames/${encodeURIComponent(username)}`)).available;
+    },
+
+    // ---------- Qui peut voir mon profil ----------
+    getSharing() {
+      return call<Sharing>('GET', '/api/me/sharing');
+    },
+
+    setVisibility(visibility) {
+      return call<Sharing>('PUT', '/api/me/visibility', { visibility });
+    },
+
+    addGrant(username, duration) {
+      return call<Sharing>('POST', '/api/me/grants', { username, duration });
+    },
+
+    removeGrant(username) {
+      return call<Sharing>('DELETE', `/api/me/grants/${encodeURIComponent(username)}`);
+    },
+
+    createShareLink(duration) {
+      return call<{ link: ShareLink; sharing: Sharing }>('POST', '/api/me/links', { duration });
+    },
+
+    deleteShareLink(id) {
+      return call<Sharing>('DELETE', `/api/me/links/${encodeURIComponent(id)}`);
+    },
+
+    async getSharedProfile(token) {
+      try {
+        return await call<PublicProfile>('GET', `/api/shared/${encodeURIComponent(token)}`);
+      } catch (e) {
+        if ((e as Error).message === 'Ce lien a expiré ou a été supprimé.') return null;
+        throw e;
+      }
     },
 
     // ---------- Comptes ----------

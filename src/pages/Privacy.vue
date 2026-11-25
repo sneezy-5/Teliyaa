@@ -32,7 +32,7 @@ const PUBLISHER = 'Teliyaa';
           <strong>Tes comptes (alias PI-SPI)</strong> : établissement, alias (souvent un numéro de téléphone ou une adresse de paiement),
           nom affiché. Ceux que tu marques « visibles » sont publics sur ta page de paiement.
         </li>
-        <li><strong>Tes réglages</strong> : app de paiement préférée, être trouvable par @pseudo ou par numéro.</li>
+        <li><strong>Tes réglages</strong> : app de paiement préférée, être trouvable par @pseudo ou par numéro, qui peut voir ton profil (personnes autorisées, liens secrets et leur durée).</li>
         <li>
           <strong>Données de sécurité</strong> : adresse IP, type d'appareil (ex. « Android · Chrome »), dates de connexion et journal de
           tes actions dans Teliyaa (connexions, codes demandés, recherches, profils consultés, comptes ajoutés ou modifiés, nombre de
@@ -58,6 +58,18 @@ const PUBLISHER = 'Teliyaa';
       <h2>3. Ce que voient les autres</h2>
       <ul>
         <li>Ta page de paiement publique montre ton nom, ton @pseudo et tes comptes visibles. <strong>Ton numéro de connexion n'est jamais affiché</strong> (sauf si tu l'as toi-même ajouté comme alias visible).</li>
+        <li>
+          <strong>Tu choisis qui voit ton profil</strong> (Profil → Qui peut voir mon profil). Par défaut, tout le monde peut ouvrir ta page
+          avec ton lien. En mode « Seulement qui je choisis », ta page ne s'ouvre que pour les personnes que tu as ajoutées (utilisateurs
+          Teliyaa connectés) et pour ceux à qui tu as envoyé un <strong>lien secret</strong>. Tu n'apparais alors plus dans la recherche ni
+          dans les contacts des autres, et ton nom n'apparaît plus dans l'aperçu de ton lien.
+        </li>
+        <li>
+          Chaque accès dure le temps que tu choisis (1 heure à « toujours ») et s'arrête tout seul ensuite. Tu peux retirer une personne ou
+          supprimer un lien à tout moment. Nous gardons la liste des personnes autorisées et des liens tant qu'ils sont actifs, puis nous
+          les effaçons. Attention : quelqu'un qui reçoit un lien secret peut le transmettre tant qu'il est valable. Choisis une durée courte
+          si besoin.
+        </li>
         <li>Les personnes qui ont ton numéro dans leurs contacts peuvent te trouver, sauf si tu désactives « Me trouver par mon numéro ».</li>
         <li>La recherche par @pseudo est réservée aux utilisateurs connectés, et tu peux t'en retirer (« Me trouver par mon @pseudo »).</li>
       </ul>

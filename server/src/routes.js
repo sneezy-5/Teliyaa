@@ -4,6 +4,7 @@ import { logout, requestCode, verifyCode } from './auth.js';
 import { pool, tx } from './db.js';
 import { HttpError, rateLimiter } from './http.js';
 import { resetPin, setPin, verifyPin } from './pin.js';
+import { sharingRoutes, viewerId, visibleTo } from './sharing.js';
 import { aliasInput, normalizeUsername, optionalBool, providerId, requirePhone, usernameError } from './validate.js';
 
 /**
@@ -13,7 +14,7 @@ import { aliasInput, normalizeUsername, optionalBool, providerId, requirePhone, 
  * sauf `pin: false` (routes du PIN lui-même, /api/me, déconnexion).
  */
 
-const PROFILE_COLS = 'id, username, full_name, phone, verified, discoverable, findable_by_phone, favorite_provider';
+const PROFILE_COLS = 'id, username, full_name, phone, verified, discoverable, findable_by_phone, favorite_provider, visibility';
 const ALIAS_COLS = 'id, owner_id, provider_id, alias_type, value, label, is_primary, visible, created_at';
 const PUBLIC_ALIAS_COLS = 'id, owner_id, provider_id, alias_type, value, label, is_primary';
 
@@ -325,12 +326,14 @@ export const routes = [
       publicByIp(`pub:${ip}`);
       const username = normalizeUsername(params.username);
       const { rows } = await pool.query(
-        `select p.id, p.username, p.full_name, p.verified
+        `select p.id, p.username, p.full_name, p.verified, coalesce(${visibleTo('$2')}, false) as allowed
            from profiles p join users u on u.id = p.id
           where p.username = $1 and u.blocked_at is null`,
-        [username]
+        [username, viewerId(user)]
       );
       if (!rows[0]) throw new HttpError(404, 'Cette page n’existe pas.');
+      // Profil privé : seulement son propriétaire et les personnes qu'il a choisies (ou via un lien secret)
+      if (!rows[0].allowed) throw new HttpError(403, 'Ce profil est privé.');
       // Consultation notée (sauf sa propre page) : sert à repérer qui regarde quelqu'un en boucle
       if (rows[0].id !== user?.id) await track(ctx, 'profile_view', { target: username });
       return (await publicProfiles(pool, rows))[0];
@@ -349,7 +352,7 @@ export const routes = [
       const esc = (s) => s.replace(/[\\%_]/g, (m) => `\\${m}`);
       const { rows } = await pool.query(
         `select p.id, p.username, p.full_name, p.verified from profiles p join users u on u.id = p.id
-          where p.discoverable and p.id <> $1 and u.blocked_at is null
+          where p.discoverable and p.id <> $1 and u.blocked_at is null and ${visibleTo('$1')}
             and (p.username like $2 escape '\\' or lower(p.full_name) like $3 escape '\\')
           order by (p.username like $4 escape '\\') desc, p.username
           limit 10`,
@@ -398,7 +401,7 @@ export const routes = [
            select hits.hash, p.id, p.username, p.full_name, p.verified
              from hits join profiles p on p.id = hits.id
              join users u on u.id = p.id
-            where p.findable_by_phone and p.id <> $1 and u.blocked_at is null`,
+            where p.findable_by_phone and p.id <> $1 and u.blocked_at is null and ${visibleTo('$1')}`,
           [user.id, clean]
         );
         // Une personne peut correspondre à plusieurs empreintes : on charge chaque profil une seule fois.
@@ -413,5 +416,6 @@ export const routes = [
     }
   },
 
+  ...sharingRoutes(publicProfiles),
   ...adminRoutes
 ];

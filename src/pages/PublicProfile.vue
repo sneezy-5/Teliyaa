@@ -12,22 +12,34 @@ import VerifiedPill from '../components/VerifiedPill.vue';
 import { api } from '../lib/api';
 import { copyText, profileLink, shareText } from '../lib/links';
 import { session } from '../lib/session';
+import { formatUntil } from '../lib/sharing';
 import { toast } from '../lib/toast';
 import type { PublicProfile } from '../lib/types';
 
 /**
- * /u/:username — profil public : n'importe qui peut l'ouvrir et payer, sans compte ni app.
+ * Page d'un profil, ouverte sans compte ni app :
+ * - /u/:username : profil public (ou privé, pour les personnes choisies par son propriétaire)
+ * - /p/:token    : lien secret, valable jusqu'à sa date de fin
  * On n'y montre que le nom, le @pseudo et les comptes marqués « visibles » (jamais le numéro de connexion).
  */
 const route = useRoute();
+const token = computed(() => (route.params.token as string | undefined) ?? null);
 const profile = ref<PublicProfile | null | undefined>(undefined);
+/** Profil privé, et cette personne n'en fait pas partie */
+const isPrivate = ref(false);
 const link = computed(() => (profile.value ? profileLink(profile.value.username) : ''));
 const isMe = computed(() => Boolean(profile.value && session.profile?.username === profile.value.username));
+const myProfilePrivate = computed(() => isMe.value && session.profile?.visibility === 'private');
+// Ouvert avec un lien secret : on n'invite pas à le faire suivre
+const canShare = computed(() => !token.value || isMe.value);
 
 onMounted(async () => {
   try {
-    profile.value = await api.getPublicProfile((route.params.username as string).toLowerCase());
-  } catch {
+    profile.value = token.value
+      ? await api.getSharedProfile(token.value)
+      : await api.getPublicProfile((route.params.username as string).toLowerCase());
+  } catch (e) {
+    isPrivate.value = (e as Error).message === 'Ce profil est privé.';
     profile.value = null;
   }
   if (profile.value) document.title = `Payer ${profile.value.full_name} — Teliyaa`;
@@ -44,23 +56,50 @@ const copyLink = async () => toast((await copyText(link.value)) ? 'Lien copié' 
 <template>
   <PublicShell>
     <Spinner v-if="profile === undefined" />
-    <div v-else-if="profile === null" class="card empty">
-      <strong>Cette page n'existe pas</strong>
-      <p class="muted small">Le lien est peut-être mal écrit, ou la personne a supprimé son compte.</p>
+
+    <div v-else-if="profile === null && isPrivate" class="card empty">
+      <span class="badge-ico"><Icon name="lock" /></span>
+      <strong>Ce profil est privé</strong>
+      <p class="muted small">
+        Seules les personnes choisies par son propriétaire peuvent le voir. Demande-lui de t'ajouter, ou de t'envoyer un lien d'accès.
+      </p>
+      <RouterLink v-if="!session.user" :to="{ path: '/login', query: { next: route.fullPath } }" class="btn secondary">
+        Il m'a ajouté : me connecter
+      </RouterLink>
     </div>
+
+    <div v-else-if="profile === null" class="card empty">
+      <strong>{{ token ? 'Ce lien ne marche plus' : "Cette page n'existe pas" }}</strong>
+      <p class="muted small">
+        {{
+          token
+            ? 'Il a expiré ou a été supprimé par son propriétaire. Demande-lui un nouveau lien.'
+            : 'Le lien est peut-être mal écrit, ou la personne a supprimé son compte.'
+        }}
+      </p>
+    </div>
+
     <div v-else class="stack">
       <section class="profile-hero">
         <Avatar :name="profile.full_name" :size="80" />
         <h1>{{ profile.full_name }}</h1>
         <span class="muted">@{{ profile.username }} <VerifiedPill v-if="profile.verified" /></span>
+        <span v-if="token" class="pill info"><Icon name="lock" :size="13" /> Lien privé · {{ formatUntil(profile.shared_until ?? null) }}</span>
       </section>
 
-      <p v-if="isMe" class="note info">
+      <p v-if="myProfilePrivate" class="note info">
+        <Icon name="lock" />
+        <span>
+          Ton profil est privé : seules les personnes que tu as choisies et tes liens secrets l'ouvrent.
+          <RouterLink to="/profile/visibility">Gérer</RouterLink>
+        </span>
+      </p>
+      <p v-else-if="isMe" class="note info">
         <Icon name="alert" />
         <span>C'est ta page publique : voici ce que voient les personnes à qui tu envoies ton lien. Les comptes masqués n'y apparaissent pas.</span>
       </p>
 
-      <div class="grid2">
+      <div v-if="canShare" class="grid2">
         <button type="button" class="btn secondary" @click="share"><Icon name="share" :size="18" /> Partager</button>
         <button type="button" class="btn secondary" @click="copyLink"><Icon name="copy" :size="18" /> Copier le lien</button>
       </div>
@@ -81,7 +120,7 @@ const copyLink = async () => toast((await copyText(link.value)) ? 'Lien copié' 
         </ul>
       </template>
 
-      <QrBlock :value="link" caption="Ou scanne ce QR avec un autre téléphone" :file-name="`${profile.username}-qr.png`" />
+      <QrBlock v-if="canShare" :value="link" caption="Ou scanne ce QR avec un autre téléphone" :file-name="`${profile.username}-qr.png`" />
     </div>
   </PublicShell>
 </template>

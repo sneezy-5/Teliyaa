@@ -130,6 +130,17 @@ async function reset() {
       </li>
 
       <li>
+        <RouterLink to="/profile/visibility" class="setting-row">
+          <span class="grow">
+            Qui peut voir mon profil
+            <span class="muted small block">Tout le monde, ou seulement qui je choisis</span>
+          </span>
+          <span class="setting-value">{{ profile.visibility === 'private' ? 'Privé' : 'Tout le monde' }}</span>
+          <Icon name="chevron" :size="18" class="muted" />
+        </RouterLink>
+      </li>
+
+      <li>
         <label class="setting-row">
           <span class="grow">
             Me trouver par mon @pseudo
