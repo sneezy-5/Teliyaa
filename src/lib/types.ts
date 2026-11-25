@@ -97,4 +97,6 @@ export interface SessionUser {
   has_pin?: boolean;
   /** Le PIN a été tapé sur cette session (sinon le serveur refuse l'accès aux données) */
   pin_ok?: boolean;
+  /** Accès au back-office (numéro dans ADMIN_PHONES côté serveur) */
+  is_admin?: boolean;
 }

@@ -26,8 +26,10 @@ export const config = {
   secret: required('APP_SECRET'),
   /** Dossier du site construit (dist/). Vide = API seule. */
   staticDir: env.STATIC_DIR || '',
-  /** Derrière Caddy / un proxy : lire l'IP du client dans X-Forwarded-For */
+  /** Derrière Nginx : lire l'IP du client dans X-Forwarded-For */
   trustProxy: env.TRUST_PROXY === '1',
+  /** Numéros (E.164) qui ont accès au back-office, séparés par des virgules. Vide = personne. */
+  adminPhones: list(env.ADMIN_PHONES),
   /** Origines autorisées à appeler l'API depuis une autre adresse (app mobile Capacitor, dev) */
   corsOrigins: list(env.CORS_ORIGINS || 'capacitor://localhost,https://localhost,http://localhost,http://localhost:5173'),
   sms: {

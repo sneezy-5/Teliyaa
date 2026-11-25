@@ -33,7 +33,13 @@ const PUBLISHER = 'Teliyaa';
           nom affiché. Ceux que tu marques « visibles » sont publics sur ta page de paiement.
         </li>
         <li><strong>Tes réglages</strong> : app de paiement préférée, être trouvable par @pseudo ou par numéro.</li>
-        <li><strong>Données techniques</strong> : adresse IP et dates de connexion, utilisées uniquement contre les abus et conservées 2 jours au plus.</li>
+        <li>
+          <strong>Données de sécurité</strong> : adresse IP, type d'appareil (ex. « Android · Chrome »), dates de connexion et journal de
+          tes actions dans Teliyaa (connexions, codes demandés, recherches, profils consultés, comptes ajoutés ou modifiés, nombre de
+          contacts comparés). Elles servent uniquement à protéger les utilisateurs contre la fraude et les abus (par exemple quelqu'un qui
+          consulte une même personne en boucle ou tente de récupérer en masse des numéros), et sont <strong>conservées 30 jours</strong>.
+          Seule l'équipe Teliyaa y a accès.
+        </li>
       </ul>
 
       <h2>2. Tes contacts</h2>
@@ -42,8 +48,8 @@ const PUBLISHER = 'Teliyaa';
         <li><strong>Les noms de tes contacts ne quittent jamais ton téléphone.</strong></li>
         <li>
           Pour chaque numéro, seule une <strong>empreinte</strong> (calcul SHA-256 du numéro) est envoyée à notre serveur, qui la compare
-          aux comptes Teliyaa existants. Ces empreintes <strong>ne sont pas enregistrées</strong> : seul le nombre de numéros comparés est
-          conservé 2 jours au plus, pour empêcher les abus.
+          aux comptes Teliyaa existants. Ces empreintes <strong>ne sont pas enregistrées</strong> : seul le nombre de numéros comparés (et
+          trouvés) est conservé 30 jours, pour empêcher les abus.
         </li>
         <li>La liste de tes contacts trouvés est gardée uniquement sur ton téléphone.</li>
         <li>Tu peux refuser ou retirer cet accès à tout moment dans les réglages de ton téléphone. L'application reste utilisable (recherche par @pseudo ou par numéro).</li>
@@ -55,6 +61,13 @@ const PUBLISHER = 'Teliyaa';
         <li>Les personnes qui ont ton numéro dans leurs contacts peuvent te trouver, sauf si tu désactives « Me trouver par mon numéro ».</li>
         <li>La recherche par @pseudo est réservée aux utilisateurs connectés, et tu peux t'en retirer (« Me trouver par mon @pseudo »).</li>
       </ul>
+
+      <h2>3 bis. Lutte contre la fraude</h2>
+      <p>
+        Des règles automatiques repèrent les comportements anormaux (recherches répétées d'une même personne, consultation de très
+        nombreux profils, codes faux à répétition, nombreux comptes créés depuis une même connexion). Un membre de l'équipe vérifie
+        ensuite et peut suspendre un compte qui ne respecte pas les <RouterLink to="/conditions">conditions d'utilisation</RouterLink>.
+      </p>
 
       <h2>4. Avec qui nous partageons</h2>
       <ul>
@@ -70,7 +83,11 @@ const PUBLISHER = 'Teliyaa';
           Ton <strong>code PIN</strong> n'est jamais enregistré en clair : nos serveurs n'en gardent qu'une empreinte chiffrée, pour le vérifier.
           Si tu actives l'empreinte digitale ou le visage, la vérification se fait uniquement par ton téléphone : nous ne recevons jamais ces données.
         </li>
-        <li>Tes données sont conservées tant que ton compte existe. Codes de connexion : 5 minutes. Sessions : 180 jours au plus.</li>
+        <li>
+          Tes données sont conservées tant que ton compte existe. Codes de connexion : 5 minutes. Sessions : 180 jours au plus. Journal
+          de sécurité : 30 jours (il est gardé même si tu supprimes ton compte, sans lien avec ton profil, pour pouvoir traiter une
+          fraude signalée).
+        </li>
       </ul>
 
       <h2>6. Supprimer ton compte</h2>

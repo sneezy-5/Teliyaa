@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { handle } from './app.js';
+import { detectSuspects } from './audit.js';
 import { config } from './config.js';
 import { cleanup, initDb, pool } from './db.js';
 
@@ -42,6 +43,8 @@ server.listen(config.port, () => {
 
 // Ménage toutes les heures
 setInterval(() => cleanup().catch((e) => console.error('Ménage :', e.message)), 60 * 60 * 1000).unref();
+// Détection des comportements suspects toutes les 10 minutes
+setInterval(() => detectSuspects().catch((e) => console.error('Détection :', e.message)), 10 * 60 * 1000).unref();
 
 // Arrêt propre (docker stop)
 for (const signal of ['SIGTERM', 'SIGINT']) {

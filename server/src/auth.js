@@ -28,7 +28,15 @@ const REVIEW_PHONE = process.env.REVIEW_PHONE || '';
 const REVIEW_CODE = process.env.REVIEW_CODE || '';
 const isReview = (phone) => Boolean(REVIEW_PHONE) && /^\d{6}$/.test(REVIEW_CODE) && phone === REVIEW_PHONE;
 
+const BLOCKED_MESSAGE = 'Ce compte est suspendu. Écris à contact@teliyaa.com pour en savoir plus.';
+
+async function refuseIfBlocked(phone) {
+  const { rows } = await pool.query(`select 1 from users where phone = $1 and blocked_at is not null`, [phone]);
+  if (rows[0]) throw new HttpError(403, BLOCKED_MESSAGE);
+}
+
 export async function requestCode(phone, ip) {
+  await refuseIfBlocked(phone);
   if (isReview(phone)) return;
   // Limites par numéro : 3 codes / 15 min, 10 / jour
   const { rows } = await pool.query(
@@ -94,10 +102,12 @@ function openSession(phone) {
       await db.query(
         `insert into users (phone) values ($1)
          on conflict (phone) do update set phone = excluded.phone
-         returning id, phone, pin_hash is not null as has_pin`,
+         returning id, phone, pin_hash is not null as has_pin, blocked_at is not null as blocked, (xmax = 0) as is_new`,
         [phone]
       )
     ).rows[0];
+    if (user.blocked) throw new HttpError(403, BLOCKED_MESSAGE);
+    delete user.blocked;
     user.pin_ok = false; // le PIN est demandé juste après
     const token = randomBytes(32).toString('base64url');
     await db.query(
@@ -117,10 +127,11 @@ export async function userFromRequest(req) {
     `select u.id, u.phone, u.pin_hash is not null as has_pin, s.pin_ok,
             s.created_at > now() - interval '${RESET_WINDOW_SQL}' as fresh
        from sessions s join users u on u.id = s.user_id
-      where s.token_hash = $1 and s.expires_at > now()`,
+      where s.token_hash = $1 and s.expires_at > now() and u.blocked_at is null`,
     [sha256(token)]
   );
-  return rows[0] ? { ...rows[0], tokenHash: sha256(token) } : null;
+  if (!rows[0]) return null;
+  return { ...rows[0], tokenHash: sha256(token), is_admin: config.adminPhones.includes(rows[0].phone) };
 }
 
 export async function logout(user) {

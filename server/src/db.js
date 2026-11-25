@@ -42,4 +42,7 @@ export async function cleanup() {
   await pool.query(`delete from otp_sends where created_at < now() - interval '2 days'`);
   await pool.query(`delete from sessions where expires_at < now()`);
   await pool.query(`delete from contact_lookups where created_at < now() - interval '2 days'`);
+  // Journal d'activité et suspects : 30 jours (annoncé dans la politique de confidentialité)
+  await pool.query(`delete from events where created_at < now() - interval '30 days'`);
+  await pool.query(`delete from suspects where updated_at < now() - interval '30 days'`);
 }

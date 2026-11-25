@@ -50,6 +50,13 @@ export const session = readonly(state);
 /** Le PIN vient d'être tapé ou créé : le serveur donne maintenant accès aux données. */
 export function markPinOk() {
   if (state.user) state.user = { ...state.user, has_pin: true, pin_ok: true };
+  // Relit le compte (droits d'administration…) sans faire attendre
+  void api
+    .getSessionUser()
+    .then((u) => {
+      if (u && state.user?.id === u.id) state.user = { ...u, has_pin: true, pin_ok: true };
+    })
+    .catch(() => {});
 }
 
 /** À appeler juste après la vérification du code SMS (n'attend pas l'événement d'auth). */

@@ -83,6 +83,48 @@ alter table users add column if not exists pin_hash text;
 alter table users add column if not exists pin_failures int not null default 0;
 alter table sessions add column if not exists pin_ok boolean not null default false;
 
+-- ---------- Sécurité et suivi (back-office) ----------
+-- Dernière visite, appareil et IP (mis à jour au plus toutes les 30 min)
+alter table users add column if not exists last_seen_at timestamptz;
+alter table users add column if not exists blocked_at timestamptz;
+alter table users add column if not exists blocked_reason text;
+alter table sessions add column if not exists last_seen_at timestamptz;
+alter table sessions add column if not exists last_ip text;
+alter table sessions add column if not exists device text;
+
+-- Journal d'activité (anti-fraude), conservé 30 jours.
+-- `target` = ce qui est visé : @pseudo consulté, texte cherché, numéro qui demande un code…
+create table if not exists events (
+  id bigint generated always as identity primary key,
+  user_id uuid references users (id) on delete set null,
+  type text not null,
+  target text,
+  ip text,
+  device text,
+  meta jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists events_created_idx on events (created_at desc);
+create index if not exists events_user_idx on events (user_id, created_at desc);
+create index if not exists events_type_idx on events (type, created_at desc);
+
+-- Comportements suspects détectés automatiquement (une ligne par règle, personne et jour)
+create table if not exists suspects (
+  id bigint generated always as identity primary key,
+  rule text not null,
+  subject text not null,
+  user_id uuid references users (id) on delete set null,
+  ip text,
+  detail text not null,
+  hits int not null,
+  day date not null default current_date,
+  status text not null default 'open' check (status in ('open', 'cleared', 'blocked')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (rule, subject, day)
+);
+create index if not exists suspects_status_idx on suspects (status, updated_at desc);
+
 -- Compteur anti-abus de la recherche de contacts
 create table if not exists contact_lookups (
   id bigint generated always as identity primary key,

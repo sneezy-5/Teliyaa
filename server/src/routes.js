@@ -1,3 +1,5 @@
+import { adminRoutes } from './admin.js';
+import { track } from './audit.js';
 import { logout, requestCode, verifyCode } from './auth.js';
 import { pool, tx } from './db.js';
 import { HttpError, rateLimiter } from './http.js';
@@ -62,19 +64,31 @@ export const routes = [
   {
     method: 'POST',
     path: '/api/auth/code',
-    async handler({ body, ip }) {
+    async handler(ctx) {
+      const { body, ip } = ctx;
       codeByIp(`code:${ip}`);
-      await requestCode(requirePhone(body.phone), ip);
+      const phone = requirePhone(body.phone);
+      await track(ctx, 'otp_request', { target: phone });
+      await requestCode(phone, ip);
       return { ok: true };
     }
   },
   {
     method: 'POST',
     path: '/api/auth/verify',
-    async handler({ body, ip }) {
+    async handler(ctx) {
+      const { body, ip } = ctx;
       verifyByIp(`verify:${ip}`);
-      const { token, user } = await verifyCode(requirePhone(body.phone), body.code);
-      return { token, user };
+      const phone = requirePhone(body.phone);
+      try {
+        const { token, user } = await verifyCode(phone, body.code);
+        if (user.is_new) await track(ctx, 'signup', { userId: user.id, target: phone });
+        await track(ctx, 'login', { userId: user.id });
+        return { token, user };
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 400) await track(ctx, 'otp_fail', { target: phone });
+        throw e;
+      }
     }
   },
   {
@@ -94,9 +108,16 @@ export const routes = [
     path: '/api/me/pin/verify',
     auth: true,
     pin: false,
-    async handler({ user, body }) {
+    async handler(ctx) {
+      const { user, body } = ctx;
       pinByUser(`pin:${user.id}`);
-      await verifyPin(user, body.pin);
+      try {
+        await verifyPin(user, body.pin);
+      } catch (e) {
+        // 401 = 5e erreur : toutes les sessions viennent d'être fermées
+        if (e instanceof HttpError) await track(ctx, e.status === 401 ? 'pin_lockout' : 'pin_fail');
+        throw e;
+      }
       return { ok: true };
     }
   },
@@ -119,9 +140,11 @@ export const routes = [
     path: '/api/me/pin/reset',
     auth: true,
     pin: false,
-    async handler({ user, body }) {
+    async handler(ctx) {
+      const { user, body } = ctx;
       pinByUser(`pin:${user.id}`);
       await resetPin(user, body.pin);
+      await track(ctx, 'pin_reset');
       return { ok: true };
     }
   },
@@ -134,7 +157,7 @@ export const routes = [
     pin: false,
     async handler({ user }) {
       return {
-        user: { id: user.id, phone: user.phone, has_pin: user.has_pin, pin_ok: user.pin_ok },
+        user: { id: user.id, phone: user.phone, has_pin: user.has_pin, pin_ok: user.pin_ok, is_admin: user.is_admin },
         profile: await myProfile(user.id)
       };
     }
@@ -144,7 +167,9 @@ export const routes = [
     method: 'DELETE',
     path: '/api/me',
     auth: true,
-    async handler({ user }) {
+    async handler(ctx) {
+      const { user } = ctx;
+      await track(ctx, 'account_delete');
       await tx(async (db) => {
         await db.query(`delete from otp_codes where phone = $1`, [user.phone]);
         await db.query(`delete from otp_sends where phone = $1`, [user.phone]);
@@ -158,7 +183,8 @@ export const routes = [
     method: 'PUT',
     path: '/api/me/profile',
     auth: true,
-    async handler({ user, body }) {
+    async handler(ctx) {
+      const { user, body } = ctx;
       const username = normalizeUsername(body.username);
       const err = usernameError(username);
       if (err) throw new HttpError(400, err);
@@ -183,6 +209,7 @@ export const routes = [
            returning ${PROFILE_COLS}`,
           [user.id, username, fullName, user.phone, discoverable ?? null, findable ?? null, favorite, setFavorite]
         );
+        await track(ctx, 'profile_update', { target: username, meta: { full_name: fullName } });
         return rows[0];
       } catch (e) {
         uniqueViolation(e, 'Ce pseudo est déjà pris.');
@@ -213,11 +240,12 @@ export const routes = [
     method: 'POST',
     path: '/api/me/aliases',
     auth: true,
-    async handler({ user, body }) {
+    async handler(ctx) {
+      const { user, body } = ctx;
       await requireProfile(user.id);
       const a = aliasInput(body);
       try {
-        return await tx(async (db) => {
+        const row = await tx(async (db) => {
           const count = (await db.query(`select count(*)::int as n from aliases where owner_id = $1`, [user.id])).rows[0].n;
           if (count >= 30) throw new HttpError(400, '30 comptes maximum.');
           const primary = a.is_primary || count === 0; // le premier compte est le principal
@@ -229,6 +257,8 @@ export const routes = [
           );
           return rows[0];
         });
+        await track(ctx, 'alias_add', { target: a.provider_id, meta: { value: a.value, label: a.label } });
+        return row;
       } catch (e) {
         uniqueViolation(e, 'Tu as déjà enregistré cet alias.');
       }
@@ -238,10 +268,11 @@ export const routes = [
     method: 'PUT',
     path: '/api/me/aliases/:id',
     auth: true,
-    async handler({ user, body, params }) {
+    async handler(ctx) {
+      const { user, body, params } = ctx;
       const a = aliasInput(body);
       try {
-        return await tx(async (db) => {
+        const row = await tx(async (db) => {
           const existing = (await db.query(`select is_primary from aliases where id = $1 and owner_id = $2`, [params.id, user.id])).rows[0];
           if (!existing) throw new HttpError(404, 'Compte introuvable.');
           // On ne peut pas « retirer » le principal sans en choisir un autre : il le reste.
@@ -254,6 +285,8 @@ export const routes = [
           );
           return rows[0];
         });
+        await track(ctx, 'alias_update', { target: a.provider_id, meta: { value: a.value, label: a.label } });
+        return row;
       } catch (e) {
         uniqueViolation(e, 'Tu as déjà enregistré cet alias.');
       }
@@ -263,9 +296,13 @@ export const routes = [
     method: 'DELETE',
     path: '/api/me/aliases/:id',
     auth: true,
-    async handler({ user, params }) {
+    async handler(ctx) {
+      const { user, params } = ctx;
       await tx(async (db) => {
-        const removed = (await db.query(`delete from aliases where id = $1 and owner_id = $2 returning is_primary`, [params.id, user.id])).rows[0];
+        const removed = (
+          await db.query(`delete from aliases where id = $1 and owner_id = $2 returning is_primary, provider_id, value`, [params.id, user.id])
+        ).rows[0];
+        if (removed) await track(ctx, 'alias_delete', { target: removed.provider_id, meta: { value: removed.value } });
         // Si on supprime le principal, le plus ancien restant le devient.
         if (removed?.is_primary) {
           await db.query(
@@ -283,12 +320,19 @@ export const routes = [
   {
     method: 'GET',
     path: '/api/profiles/:username',
-    async handler({ params, ip }) {
+    async handler(ctx) {
+      const { params, ip, user } = ctx;
       publicByIp(`pub:${ip}`);
-      const { rows } = await pool.query(`select id, username, full_name, verified from profiles where username = $1`, [
-        normalizeUsername(params.username)
-      ]);
+      const username = normalizeUsername(params.username);
+      const { rows } = await pool.query(
+        `select p.id, p.username, p.full_name, p.verified
+           from profiles p join users u on u.id = p.id
+          where p.username = $1 and u.blocked_at is null`,
+        [username]
+      );
       if (!rows[0]) throw new HttpError(404, 'Cette page n’existe pas.');
+      // Consultation notée (sauf sa propre page) : sert à repérer qui regarde quelqu'un en boucle
+      if (rows[0].id !== user?.id) await track(ctx, 'profile_view', { target: username });
       return (await publicProfiles(pool, rows))[0];
     }
   },
@@ -296,20 +340,23 @@ export const routes = [
     method: 'GET',
     path: '/api/search',
     auth: true,
-    async handler({ user, query }) {
+    async handler(ctx) {
+      const { user, query } = ctx;
       searchByUser(`search:${user.id}`);
       const raw = String(query.get('q') ?? '').trim().toLowerCase().slice(0, 40);
       const handle = raw.replace(/^@/, '');
       if (handle.length < 2) return [];
       const esc = (s) => s.replace(/[\\%_]/g, (m) => `\\${m}`);
       const { rows } = await pool.query(
-        `select id, username, full_name, verified from profiles
-          where discoverable and id <> $1
-            and (username like $2 escape '\\' or lower(full_name) like $3 escape '\\')
-          order by (username like $4 escape '\\') desc, username
+        `select p.id, p.username, p.full_name, p.verified from profiles p join users u on u.id = p.id
+          where p.discoverable and p.id <> $1 and u.blocked_at is null
+            and (p.username like $2 escape '\\' or lower(p.full_name) like $3 escape '\\')
+          order by (p.username like $4 escape '\\') desc, p.username
           limit 10`,
         [user.id, `%${esc(handle)}%`, `%${esc(raw)}%`, `${esc(handle)}%`]
       );
+      // La recherche se fait pendant la frappe : on ne note que les recherches d'au moins 3 caractères
+      if (handle.length >= 3) await track(ctx, 'search', { target: handle, meta: { results: rows.length } });
       return publicProfiles(pool, rows);
     }
   },
@@ -317,14 +364,15 @@ export const routes = [
     method: 'POST',
     path: '/api/contacts/match',
     auth: true,
-    async handler({ user, body }) {
+    async handler(ctx) {
+      const { user, body } = ctx;
       const hashes = Array.isArray(body.hashes) ? body.hashes : null;
       if (!hashes) throw new HttpError(400, 'Liste de contacts invalide.');
       if (hashes.length === 0) return [];
       if (hashes.length > LOOKUP_BATCH) throw new HttpError(400, `Trop de contacts en une fois (${LOOKUP_BATCH} maximum).`);
       const clean = [...new Set(hashes.filter((h) => typeof h === 'string' && /^[0-9a-f]{64}$/i.test(h)).map((h) => h.toLowerCase()))];
 
-      return tx(async (db) => {
+      const result = await tx(async (db) => {
         // Anti-abus : sans limite, on pourrait tester tous les numéros d'un pays.
         await db.query(`select pg_advisory_xact_lock(hashtext($1))`, [user.id]);
         const used = (
@@ -333,7 +381,10 @@ export const routes = [
             [user.id]
           )
         ).rows[0].n;
-        if (used + hashes.length > LOOKUP_DAILY) throw new HttpError(429, 'Limite de recherche de contacts atteinte pour aujourd’hui. Réessaie demain.');
+        if (used + hashes.length > LOOKUP_DAILY) {
+          await track(ctx, 'contacts_limit', { meta: { count: hashes.length, used } });
+          throw new HttpError(429, 'Limite de recherche de contacts atteinte pour aujourd’hui. Réessaie demain.');
+        }
         await db.query(`insert into contact_lookups (user_id, lookups) values ($1, $2)`, [user.id, hashes.length]);
         if (clean.length === 0) return [];
 
@@ -346,7 +397,8 @@ export const routes = [
            )
            select hits.hash, p.id, p.username, p.full_name, p.verified
              from hits join profiles p on p.id = hits.id
-            where p.findable_by_phone and p.id <> $1`,
+             join users u on u.id = p.id
+            where p.findable_by_phone and p.id <> $1 and u.blocked_at is null`,
           [user.id, clean]
         );
         // Une personne peut correspondre à plusieurs empreintes : on charge chaque profil une seule fois.
@@ -355,6 +407,11 @@ export const routes = [
         const profileById = new Map(people.map((p, i) => [p.id, profiles[i]]));
         return rows.map((r) => ({ hash: r.hash, profile: profileById.get(r.id) }));
       });
+      // Seulement le nombre de numéros comparés et trouvés : jamais les empreintes
+      await track(ctx, 'contacts_match', { meta: { count: hashes.length, hits: result.length } });
+      return result;
     }
-  }
+  },
+
+  ...adminRoutes
 ];

@@ -1,6 +1,7 @@
 import { createReadStream } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { touchSession } from './audit.js';
 import { userFromRequest } from './auth.js';
 import { config } from './config.js';
 import { pool } from './db.js';
@@ -79,8 +80,19 @@ export async function handle(req, res) {
       if (route.auth && !user) throw new HttpError(401, 'Connecte-toi pour continuer.');
       // Le code WhatsApp seul ne suffit pas : il faut aussi le PIN pour voir ou modifier les données
       if (route.auth && route.pin !== false && !user.pin_ok) throw new HttpError(403, 'Entre ton code PIN pour continuer.');
+      // Back-office : réservé aux numéros de ADMIN_PHONES. Pour les autres, ces adresses « n'existent pas ».
+      if (route.admin && !user?.is_admin) throw new HttpError(404, 'Introuvable.');
       const body = ['POST', 'PUT'].includes(req.method) ? await readJson(req) : {};
-      const data = await route.handler({ params, query: url.searchParams, body: body ?? {}, user, ip: clientIp(req) });
+      const ctx = {
+        params,
+        query: url.searchParams,
+        body: body ?? {},
+        user,
+        ip: clientIp(req),
+        ua: String(req.headers['user-agent'] ?? '').slice(0, 300)
+      };
+      if (user) void touchSession(ctx); // dernière visite, appareil, IP (sans faire attendre)
+      const data = await route.handler(ctx);
       return sendJson(res, 200, data ?? { ok: true }, { ...cors, ...SECURITY_HEADERS });
     } catch (e) {
       const status = e instanceof HttpError ? e.status : e instanceof URIError ? 400 : 500;
@@ -165,7 +177,10 @@ async function serveProfilePage(req, res, indexFile, rawUsername) {
   let name = null;
   try {
     const username = normalizeUsername(rawUsername); // déjà décodé par serveStatic
-    const { rows } = await pool.query(`select full_name from profiles where username = $1`, [username]);
+    const { rows } = await pool.query(
+      `select p.full_name from profiles p join users u on u.id = p.id where p.username = $1 and u.blocked_at is null`,
+      [username]
+    );
     name = rows[0]?.full_name ?? null;
   } catch {
     /* base indisponible : page normale, sans aperçu personnalisé */
