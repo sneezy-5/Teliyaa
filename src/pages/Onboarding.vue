@@ -67,13 +67,13 @@ async function submit() {
       <p class="muted">Affichés sur ta page de paiement.</p>
       <label class="field">
         <span>Nom complet</span>
-        <input v-model="fullName" autocomplete="name" placeholder="Aminata Koné" />
+        <input v-model="fullName" autocomplete="name" placeholder="Mariam Sanogo" />
       </label>
       <label class="field">
         <span>Pseudo</span>
         <div class="prefix-input">
           <span aria-hidden="true">@</span>
-          <input v-model="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="aminata.k" />
+          <input v-model="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="mariam.s" />
         </div>
         <small v-if="hint" :class="hint.cls">{{ hint.text }}</small>
       </label>

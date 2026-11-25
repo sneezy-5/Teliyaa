@@ -21,10 +21,10 @@ describe('format', () => {
   });
 
   it('valide les pseudos', () => {
-    expect(validateUsername('aminata.k')).toBeNull();
-    expect(validateUsername('@Aminata.K')).toBeNull();
+    expect(validateUsername('mariam.s')).toBeNull();
+    expect(validateUsername('@Mariam.S')).toBeNull();
     expect(validateUsername('ab')).not.toBeNull();
-    expect(validateUsername('.aminata')).not.toBeNull();
+    expect(validateUsername('.mariam')).not.toBeNull();
     expect(validateUsername('wave.officiel')).not.toBeNull();
   });
 
@@ -53,7 +53,7 @@ describe('ouverture des apps depuis le navigateur', () => {
 
 describe('parcours complet en mode démo', () => {
   it('inscription → alias → demande → paiement déclaré → confirmé', async () => {
-    // Aminata (compte de démo existant) crée une demande
+    // Mariam (compte de démo existant) crée une demande
     await demoApi.verifyOtp('+2250700000001', DEMO_OTP);
     const aliases = await demoApi.listMyAliases();
     expect(aliases[0].is_primary).toBe(true);
@@ -63,25 +63,25 @@ describe('parcours complet en mode démo', () => {
     await demoApi.signOut();
     await expect(demoApi.verifyOtp('+2250100000009', '000000')).rejects.toThrow();
     await demoApi.verifyOtp('+2250100000009', DEMO_OTP);
-    await expect(demoApi.saveMyProfile({ username: 'aminata.k', full_name: 'Koffi' })).rejects.toThrow('déjà pris');
+    await expect(demoApi.saveMyProfile({ username: 'mariam.s', full_name: 'Koffi' })).rejects.toThrow('déjà pris');
     await demoApi.saveMyProfile({ username: 'koffi.a', full_name: 'Koffi Adjoumani' });
     const first = await demoApi.saveAlias({ provider_id: 'bank', alias_type: 'phone', value: '+2250100000009', label: null, is_primary: false, visible: true });
     expect(first.is_primary).toBe(true); // le premier alias devient principal
 
-    // Il ouvre la demande : seul l'alias choisi par Aminata est proposé
+    // Il ouvre la demande : seul l'alias choisi par Mariam est proposé
     const pub = await demoApi.getPublicRequest(req.code.toLowerCase());
     expect(pub?.profile.aliases).toHaveLength(1);
     expect(pub?.profile).not.toHaveProperty('phone');
 
     // Recherche @pseudo
-    const found = await demoApi.searchProfiles('@amin');
-    expect(found.map((p) => p.username)).toContain('aminata.k');
+    const found = await demoApi.searchProfiles('@mari');
+    expect(found.map((p) => p.username)).toContain('mariam.s');
 
     // Il déclare avoir payé
-    await demoApi.declarePayment({ recipientUsername: 'aminata.k', amount: 15000, note: 'Tontine', requestCode: req.code, providerId: 'bank' });
+    await demoApi.declarePayment({ recipientUsername: 'mariam.s', amount: 15000, note: 'Tontine', requestCode: req.code, providerId: 'bank' });
     expect((await demoApi.listMyPayments()).sent).toHaveLength(1);
 
-    // Aminata confirme
+    // Mariam confirme
     await demoApi.signOut();
     await demoApi.verifyOtp('+2250700000001', DEMO_OTP);
     const { received } = await demoApi.listMyPayments();

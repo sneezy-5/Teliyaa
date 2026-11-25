@@ -6,7 +6,7 @@ import type { AliasInput, Api, DeclarePaymentInput } from './types';
 /**
  * MODE DÉMO : tout est stocké dans le navigateur (localStorage).
  * Le code SMS est toujours 123456. Trois comptes d'exemple sont créés
- * (@aminata.k, @moussa, @fatou.t) pour tester la recherche et les paiements.
+ * (@mariam.s, @moussa, @fatou.t) pour tester la recherche et les paiements.
  */
 
 export const DEMO_OTP = '123456';
@@ -35,18 +35,18 @@ function seed(): Db {
   });
   return {
     users: [
-      { id: 'demo-aminata', phone: '+2250700000001' },
+      { id: 'demo-mariam', phone: '+2250700000001' },
       { id: 'demo-moussa', phone: '+2250500000004' },
       { id: 'demo-fatou', phone: '+2250500000003' }
     ],
     profiles: [
-      mk('demo-aminata', '+2250700000001', 'aminata.k', 'Aminata Koné'),
+      mk('demo-mariam', '+2250700000001', 'mariam.s', 'Mariam Sanogo'),
       mk('demo-moussa', '+2250500000004', 'moussa', 'Moussa Diarra'),
       mk('demo-fatou', '+2250500000003', 'fatou.t', 'Fatou Traoré')
     ],
     aliases: [
-      al('demo-aminata', 'wave', '+2250700000001', true),
-      al('demo-aminata', 'orange-money', '+2250500000002', false),
+      al('demo-mariam', 'wave', '+2250700000001', true),
+      al('demo-mariam', 'orange-money', '+2250500000002', false),
       al('demo-moussa', 'mtn-momo', '+2250500000004', true),
       al('demo-fatou', 'orange-money', '+2250500000003', true)
     ],

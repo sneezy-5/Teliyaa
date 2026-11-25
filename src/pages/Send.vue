@@ -52,7 +52,7 @@ watch(q, (value) => {
       </label>
 
       <p v-if="results === null" class="muted small">
-        Tape au moins 2 lettres.<template v-if="api.mode === 'demo'"> Astuce : en mode démo, essaie « ami ».</template>
+        Tape au moins 2 lettres.<template v-if="api.mode === 'demo'"> Astuce : en mode démo, essaie « mar ».</template>
       </p>
       <p v-else-if="results.length === 0" class="muted">Personne trouvé. Cherche-le dans « Mes contacts » ou demande-lui son lien de paiement.</p>
       <ul v-else class="list">

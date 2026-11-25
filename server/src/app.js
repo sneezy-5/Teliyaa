@@ -172,7 +172,7 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 
 /**
  * index.html avec un titre et des balises Open Graph propres à la personne :
- * WhatsApp affiche alors « Payer Awa Koné » sous le lien partagé.
+ * WhatsApp affiche alors « Payer Mariam Sanogo » sous le lien partagé.
  * On n'y met que le nom public, jamais de numéro.
  */
 async function serveProfilePage(req, res, indexFile, rawUsername) {
