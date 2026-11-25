@@ -50,6 +50,16 @@ export const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 });
 
+// Titre de l'onglet (et de la page dans Google) pour les pages publiques
+const TITLES: Record<string, string> = {
+  '/conditions': "Conditions d'utilisation — Teliyaa",
+  '/confidentialite': 'Politique de confidentialité — Teliyaa'
+};
+router.afterEach((to) => {
+  if (TITLES[to.path]) document.title = TITLES[to.path];
+  else if (!to.path.startsWith('/u/')) document.title = 'Teliyaa';
+});
+
 /** Connecté + profil créé, sinon redirection vers la bonne étape. */
 router.beforeEach(async (to) => {
   await initSession();

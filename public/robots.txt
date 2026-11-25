@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /login
+Disallow: /onboarding
+Disallow: /send
+Disallow: /profile
+Disallow: /aliases/
+
+Sitemap: https://teliyaa.com/sitemap.xml

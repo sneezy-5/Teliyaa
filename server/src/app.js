@@ -120,7 +120,10 @@ const TYPES = {
   '.jpg': 'image/jpeg',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
-  '.txt': 'text/plain; charset=utf-8'
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
+  '.webp': 'image/webp',
+  '.jpeg': 'image/jpeg'
 };
 
 async function serveStatic(req, res, pathname) {
@@ -201,10 +204,14 @@ async function serveProfilePage(req, res, indexFile, rawUsername) {
       `<meta name="twitter:card" content="summary" />`
     ].join('\n    ');
     html = html
+      // On retire les balises de la vitrine avant de mettre celles de la personne
+      .replace(/\s*<meta (property="og:[^"]*"|name="twitter:card")[^>]*>/g, '')
       .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-      .replace(/<meta name="description" content="[^"]*"\s*\/?>/, `<meta name="description" content="${description}" />`)
+      .replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/, `<meta name="description" content="${description}" />`)
       .replace('</head>', `    ${tags}\n  </head>`);
   }
+  // Les profils se partagent par lien, mais n'apparaissent pas dans Google (vie privée)
+  html = html.replace('</head>', `    <meta name="robots" content="noindex" />\n  </head>`);
 
   const body = Buffer.from(html, 'utf8');
   res.writeHead(200, {

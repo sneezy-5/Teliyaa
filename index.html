@@ -4,12 +4,425 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#4338CA" />
-    <meta name="description" content="Regroupe tes alias PI-SPI et fais-toi payer avec un seul lien." />
+    <title>Teliyaa — un seul lien pour te faire payer par Wave, Orange Money, MTN et Moov</title>
+    <meta
+      name="description"
+      content="Teliyaa regroupe tes alias PI-SPI (Wave, Orange Money, MTN MoMo, Moov Money, banque) sur une seule page. Partage ton lien : on te paie depuis n'importe quelle app, partout dans l'UEMOA."
+    />
     <link rel="icon" href="./icone-512.png" type="image/png" />
     <link rel="apple-touch-icon" href="./icone-512.png" />
-    <title>Teliyaa — tous tes alias PI-SPI</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Teliyaa" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content="Teliyaa — un seul lien pour te faire payer" />
+    <meta property="og:description" content="Tous tes alias PI-SPI au même endroit. On te paie depuis Wave, Orange Money, MTN ou Moov, en un geste." />
+    <meta property="og:image" content="https://teliyaa.com/icone-512.png" />
+    <meta name="twitter:card" content="summary" />
+
+    <!--
+      Vitrine : page statique lisible par Google sans JavaScript.
+      Elle s'affiche seulement sur « / » pour un visiteur non connecté, sur le web.
+      Ailleurs (autre page, déjà connecté, app mobile), on la cache avant même qu'elle s'affiche : l'app prend le relais.
+    -->
+    <script>
+      (function () {
+        var app = location.pathname !== '/' || location.hash.length > 1 || !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        try {
+          if (localStorage.getItem('teliyaa-session')) app = true;
+        } catch (e) {}
+        if (app) document.documentElement.className += ' in-app';
+      })();
+    </script>
+    <style>
+      html.in-app #vitrine { display: none; }
+      #root:empty { display: none; }
+      #vitrine {
+        --v-ink: #14122b;
+        --v-muted: #5d5b78;
+        --v-brand: #4338ca;
+        --v-brand-2: #6d28d9;
+        --v-soft: #f4f3ff;
+        --v-line: #e7e6f3;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        color: var(--v-ink);
+        background: #fff;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      #vitrine * { box-sizing: border-box; }
+      #vitrine a { color: inherit; }
+      #vitrine .v-wrap { max-width: 1040px; margin: 0 auto; padding: 0 22px; }
+      #vitrine .v-top { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+      #vitrine .v-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.3rem; text-decoration: none; letter-spacing: -0.01em; }
+      #vitrine .v-brand img { width: 38px; height: 38px; border-radius: 10px; }
+      #vitrine .v-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 48px; padding: 0 22px; border-radius: 14px;
+        font-weight: 700; font-size: 1rem; text-decoration: none; white-space: nowrap;
+      }
+      #vitrine .v-btn.primary { background: var(--v-brand); color: #fff; }
+      #vitrine .v-btn.primary:hover { background: #3730a3; }
+      #vitrine .v-btn.light { background: #fff; color: var(--v-brand); }
+      #vitrine .v-btn.ghost { color: var(--v-brand); min-height: 40px; padding: 0 14px; border: 1px solid var(--v-line); }
+
+      #vitrine .v-hero { display: grid; gap: 40px; align-items: center; padding: 36px 0 64px; }
+      #vitrine h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 18px; }
+      #vitrine h1 em { font-style: normal; color: var(--v-brand); }
+      #vitrine .v-lead { font-size: 1.15rem; color: var(--v-muted); margin: 0 0 28px; max-width: 34em; }
+      #vitrine .v-cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+      #vitrine .v-note { font-size: 0.9rem; color: var(--v-muted); }
+      #vitrine .v-apps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; padding: 0; list-style: none; }
+      #vitrine .v-apps li {
+        display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+        background: var(--v-soft); font-size: 0.9rem; font-weight: 600;
+      }
+      #vitrine .v-chip-logo { width: 22px; height: 22px; border-radius: 6px; overflow: hidden; margin-left: -5px; }
+      #vitrine .v-chip-logo:empty { display: none; }
+      #vitrine .v-chip-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+      /* Aperçu de la page publique d'un profil, comme dans l'app (dessiné en HTML) */
+      #vitrine .v-phone {
+        justify-self: center; width: min(340px, 100%); overflow: hidden;
+        border-radius: 34px; background: #fff; border: 1px solid var(--v-line);
+        box-shadow: 0 30px 60px -30px rgba(67, 56, 202, 0.35);
+      }
+      #vitrine .v-phone-top {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        padding: 14px 18px; border-bottom: 1px solid var(--v-line);
+        font-weight: 800; color: var(--v-brand); font-size: 1.05rem;
+      }
+      #vitrine .v-phone-top span { display: flex; align-items: center; gap: 8px; }
+      #vitrine .v-phone-top img { width: 26px; height: 26px; border-radius: 7px; }
+      #vitrine .v-phone-top small { font-weight: 500; font-size: 0.72rem; color: var(--v-muted); }
+      #vitrine .v-phone-body { padding: 20px 16px 22px; }
+      #vitrine .v-who { text-align: center; margin-bottom: 16px; }
+      #vitrine .v-avatar {
+        width: 72px; height: 72px; margin: 0 auto 10px; border-radius: 50%;
+        display: grid; place-items: center; font-weight: 800; font-size: 1.5rem;
+        color: var(--v-brand); background: #eef0ff; box-shadow: 0 0 0 5px #fff, 0 0 0 7px #eef0ff;
+      }
+      #vitrine .v-who strong { display: block; font-size: 1.25rem; letter-spacing: -0.02em; }
+      #vitrine .v-who span { color: var(--v-muted); font-size: 0.9rem; }
+      #vitrine .v-pill {
+        display: inline-block; margin-left: 4px; padding: 2px 9px; border-radius: 999px;
+        background: #eef0ff; color: var(--v-brand); font-size: 0.75rem; font-weight: 700;
+      }
+      #vitrine .v-card {
+        position: relative; overflow: hidden; margin-top: 10px; padding: 14px 14px 16px;
+        border-radius: 20px; color: #fff; background: linear-gradient(135deg, var(--c1), var(--c2));
+        box-shadow: 0 10px 22px -14px var(--c2);
+      }
+      #vitrine .v-card::after {
+        content: ''; position: absolute; right: -40px; top: -50px; width: 150px; height: 150px;
+        border-radius: 50%; background: rgba(255, 255, 255, 0.1);
+      }
+      #vitrine .v-card-head { display: flex; align-items: center; gap: 10px; }
+      #vitrine .v-logo {
+        width: 40px; height: 40px; flex: none; border-radius: 11px; overflow: hidden;
+        display: grid; place-items: center; background: rgba(255, 255, 255, 0.9);
+        color: var(--c2); font-weight: 800; font-size: 0.8rem;
+      }
+      #vitrine .v-logo img { width: 100%; height: 100%; object-fit: cover; }
+      #vitrine .v-card-head strong { display: block; line-height: 1.2; }
+      #vitrine .v-card-head small { opacity: 0.85; font-size: 0.8rem; }
+      #vitrine .v-tag {
+        margin-left: auto; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+        background: rgba(255, 255, 255, 0.25);
+      }
+      #vitrine .v-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+      #vitrine .v-card-foot b { font-size: 1.1rem; letter-spacing: 0.01em; }
+      #vitrine .v-pay { padding: 6px 14px; border-radius: 999px; background: #fff; color: var(--v-ink); font-size: 0.8rem; font-weight: 700; }
+      #vitrine .v-card.dark-ink { color: #1f2937; }
+      #vitrine .v-card.dark-ink .v-tag { background: rgba(0, 0, 0, 0.08); }
+
+      #vitrine section { padding: 64px 0; }
+      #vitrine section.tint { background: var(--v-soft); }
+      #vitrine h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 32px; }
+      #vitrine h3 { font-size: 1.1rem; margin: 0 0 6px; }
+      #vitrine p { margin: 0; }
+      #vitrine .v-grid { display: grid; gap: 18px; }
+      #vitrine .v-step, #vitrine .v-feat { padding: 22px; border-radius: 20px; background: #fff; border: 1px solid var(--v-line); }
+      #vitrine .v-step .n {
+        display: inline-grid; place-items: center; width: 32px; height: 32px; margin-bottom: 12px;
+        border-radius: 10px; background: var(--v-brand); color: #fff; font-weight: 800;
+      }
+      #vitrine .v-step p, #vitrine .v-feat p { color: var(--v-muted); }
+
+      #vitrine .v-faq { max-width: 760px; }
+      #vitrine details { border-bottom: 1px solid var(--v-line); padding: 18px 0; }
+      #vitrine summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+      #vitrine summary::-webkit-details-marker { display: none; }
+      #vitrine summary::after { content: '+'; color: var(--v-brand); font-size: 1.4rem; line-height: 1; }
+      #vitrine details[open] summary::after { content: '–'; }
+      #vitrine details p { color: var(--v-muted); margin-top: 10px; }
+
+      #vitrine .v-final {
+        text-align: center; color: #fff; border-radius: 28px; padding: 48px 24px;
+        background: linear-gradient(135deg, var(--v-brand), var(--v-brand-2));
+      }
+      #vitrine .v-final h2 { margin-bottom: 12px; }
+      #vitrine .v-final p { opacity: 0.9; margin-bottom: 24px; }
+
+      #vitrine footer { padding: 32px 0 40px; color: var(--v-muted); font-size: 0.9rem; }
+      #vitrine footer .v-wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+      #vitrine footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+
+      @media (min-width: 800px) {
+        #vitrine .v-hero { grid-template-columns: 1.2fr 1fr; padding: 56px 0 88px; }
+        #vitrine .v-grid.three { grid-template-columns: repeat(3, 1fr); }
+        #vitrine .v-grid.two { grid-template-columns: repeat(2, 1fr); }
+        #vitrine section { padding: 88px 0; }
+      }
+    </style>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "name": "Teliyaa",
+            "url": "https://teliyaa.com/",
+            "logo": "https://teliyaa.com/icone-512.png",
+            "email": "contact@teliyaa.com"
+          },
+          {
+            "@type": "WebApplication",
+            "name": "Teliyaa",
+            "url": "https://teliyaa.com/",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Web",
+            "inLanguage": "fr",
+            "description": "Regroupe tes alias PI-SPI (Wave, Orange Money, MTN MoMo, Moov Money, banque) et fais-toi payer avec un seul lien, partout dans l'UEMOA."
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Qu'est-ce qu'un alias PI-SPI ?",
+                "acceptedAnswer": { "@type": "Answer", "text": "PI-SPI est le système de paiement instantané de la BCEAO, commun aux pays de l'UEMOA. Un alias est un identifiant simple, souvent ton numéro de téléphone, relié à ton compte Wave, Orange Money, MTN MoMo, Moov Money ou bancaire. Il permet de recevoir de l'argent sans donner un long numéro de compte." }
+              },
+              {
+                "@type": "Question",
+                "name": "Teliyaa touche-t-il à mon argent ?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Non. Teliyaa n'est pas une banque ni un portefeuille : il ne garde, ne transfère et ne voit jamais ton argent. Il affiche tes alias et ouvre l'app de paiement de celui qui te paie. Le paiement se fait entièrement dans son app." }
+              },
+              {
+                "@type": "Question",
+                "name": "Faut-il un compte Teliyaa pour me payer ?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Non. Ta page teliyaa.com/u/ton-pseudo s'ouvre pour tout le monde, sans compte et sans rien installer. Il suffit d'avoir une app de paiement." }
+              },
+              {
+                "@type": "Question",
+                "name": "Dans quels pays fonctionne Teliyaa ?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Dans les pays de l'UEMOA : Bénin, Burkina Faso, Côte d'Ivoire, Guinée-Bissau, Mali, Niger, Sénégal et Togo." }
+              },
+              {
+                "@type": "Question",
+                "name": "Mes données sont-elles protégées ?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Ton numéro est vérifié par WhatsApp et ton compte est protégé par un code PIN, ou ton empreinte dans l'app mobile. Tu choisis si l'on peut te trouver par ton pseudo ou par ton numéro, et tu peux supprimer ton compte à tout moment." }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
+    <div id="vitrine">
+      <header class="v-wrap v-top">
+        <a href="/" class="v-brand" aria-label="Teliyaa, accueil">
+          <img src="/icone-512.png" alt="" width="38" height="38" />
+          Teliyaa
+        </a>
+        <a href="/login" class="v-btn ghost">Se connecter</a>
+      </header>
+
+      <main>
+        <div class="v-wrap v-hero">
+          <div>
+            <h1>Un seul lien pour <em>te faire payer</em>, depuis n'importe quelle app.</h1>
+            <p class="v-lead">
+              Teliyaa regroupe tes alias PI-SPI sur une seule page. Tu partages ton lien, on choisit son app et on te paie en un geste.
+              Fini les captures d'écran et les « c'est quoi ton numéro Wave ? ».
+            </p>
+            <div class="v-cta">
+              <a href="/login" class="v-btn primary">Créer mon compte</a>
+              <span class="v-note">Gratuit · 1 minute avec ton numéro</span>
+            </div>
+            <ul class="v-apps" aria-label="Apps compatibles">
+              <li><span class="v-chip-logo" data-logo="wave"></span>Wave</li>
+              <li><span class="v-chip-logo" data-logo="orange-money"></span>Orange Money</li>
+              <li><span class="v-chip-logo" data-logo="mtn-momo"></span>MTN MoMo</li>
+              <li><span class="v-chip-logo" data-logo="moov-money"></span>Moov Money</li>
+              <li>Banques</li>
+            </ul>
+          </div>
+
+          <div class="v-phone" aria-hidden="true">
+            <div class="v-phone-top">
+              <span><img src="/icone-512.png" alt="" width="26" height="26" />Teliyaa</span>
+              <small>teliyaa.com/u/awa</small>
+            </div>
+            <div class="v-phone-body">
+              <div class="v-who">
+                <div class="v-avatar">AK</div>
+                <strong>Awa Koné</strong>
+                <span>@awa <em class="v-pill" style="font-style: normal">✓ Numéro vérifié</em></span>
+              </div>
+              <div class="v-card" style="--c1: #1aa7e8; --c2: #0b6fc2">
+                <div class="v-card-head">
+                  <span class="v-logo" data-logo="wave">W</span>
+                  <span><strong>Wave</strong><small>Alias</small></span>
+                  <span class="v-tag">Principal</span>
+                </div>
+                <div class="v-card-foot"><b>+225 07 •• •• 12</b><span class="v-pay">Payer</span></div>
+              </div>
+              <div class="v-card" style="--c1: #ff8a1f; --c2: #e25c00">
+                <div class="v-card-head">
+                  <span class="v-logo" data-logo="orange-money">OM</span>
+                  <span><strong>Orange Money</strong><small>Alias</small></span>
+                </div>
+                <div class="v-card-foot"><b>+225 07 •• •• 12</b><span class="v-pay">Payer</span></div>
+              </div>
+              <div class="v-card dark-ink" style="--c1: #ffd23f; --c2: #f5b400">
+                <div class="v-card-head">
+                  <span class="v-logo" data-logo="mtn-momo">MTN</span>
+                  <span><strong>MTN MoMo</strong><small>Alias</small></span>
+                </div>
+                <div class="v-card-foot"><b>+225 05 •• •• 48</b><span class="v-pay">Payer</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section class="tint" aria-labelledby="comment">
+          <div class="v-wrap">
+            <h2 id="comment">Comment ça marche</h2>
+            <div class="v-grid three">
+              <div class="v-step">
+                <span class="n">1</span>
+                <h3>Ajoute tes comptes</h3>
+                <p>Wave, Orange Money, MTN, Moov, banque : enregistre tes alias une fois, avec ton numéro vérifié par WhatsApp.</p>
+              </div>
+              <div class="v-step">
+                <span class="n">2</span>
+                <h3>Partage ton lien</h3>
+                <p>Ta page teliyaa.com/u/ton-pseudo, ou ton QR code. Envoie-la sur WhatsApp, mets-la dans ta bio ou sur ton comptoir.</p>
+              </div>
+              <div class="v-step">
+                <span class="n">3</span>
+                <h3>On te paie</h3>
+                <p>La personne choisit le compte qui l'arrange. Teliyaa ouvre son app de paiement : elle n'a plus qu'à valider.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="pourquoi">
+          <div class="v-wrap">
+            <h2 id="pourquoi">Pensé pour le quotidien</h2>
+            <div class="v-grid two">
+              <div class="v-feat">
+                <h3>Pour les commerçants et indépendants</h3>
+                <p>Un QR code ou un lien unique pour tous tes clients, quel que soit leur opérateur.</p>
+              </div>
+              <div class="v-feat">
+                <h3>Retrouve qui est sur Teliyaa</h3>
+                <p>Cherche un @pseudo ou retrouve tes contacts déjà inscrits, et paie-les sans redemander leurs numéros.</p>
+              </div>
+              <div class="v-feat">
+                <h3>Sans compte pour celui qui paie</h3>
+                <p>Ta page s'ouvre dans n'importe quel navigateur. Rien à installer, rien à créer.</p>
+              </div>
+              <div class="v-feat">
+                <h3>Protégé par un code PIN</h3>
+                <p>Numéro vérifié, code PIN à chaque ouverture, et tu choisis qui peut te trouver. Teliyaa ne touche jamais à ton argent.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tint" aria-labelledby="faq">
+          <div class="v-wrap v-faq">
+            <h2 id="faq">Questions fréquentes</h2>
+            <details>
+              <summary>Qu'est-ce qu'un alias PI-SPI ?</summary>
+              <p>
+                PI-SPI est le système de paiement instantané de la BCEAO, commun aux pays de l'UEMOA. Un alias est un identifiant simple, souvent ton
+                numéro de téléphone, relié à ton compte Wave, Orange Money, MTN MoMo, Moov Money ou bancaire. Il permet de recevoir de l'argent sans
+                donner un long numéro de compte.
+              </p>
+            </details>
+            <details>
+              <summary>Teliyaa touche-t-il à mon argent ?</summary>
+              <p>
+                Non. Teliyaa n'est pas une banque ni un portefeuille : il ne garde, ne transfère et ne voit jamais ton argent. Il affiche tes alias et
+                ouvre l'app de paiement de celui qui te paie. Le paiement se fait entièrement dans son app.
+              </p>
+            </details>
+            <details>
+              <summary>Faut-il un compte Teliyaa pour me payer ?</summary>
+              <p>Non. Ta page teliyaa.com/u/ton-pseudo s'ouvre pour tout le monde, sans compte et sans rien installer. Il suffit d'avoir une app de paiement.</p>
+            </details>
+            <details>
+              <summary>Dans quels pays fonctionne Teliyaa ?</summary>
+              <p>Dans les pays de l'UEMOA : Bénin, Burkina Faso, Côte d'Ivoire, Guinée-Bissau, Mali, Niger, Sénégal et Togo.</p>
+            </details>
+            <details>
+              <summary>Mes données sont-elles protégées ?</summary>
+              <p>
+                Ton numéro est vérifié par WhatsApp et ton compte est protégé par un code PIN, ou ton empreinte dans l'app mobile. Tu choisis si l'on
+                peut te trouver par ton pseudo ou par ton numéro, et tu peux supprimer ton compte à tout moment.
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <section>
+          <div class="v-wrap">
+            <div class="v-final">
+              <h2>Crée ton lien Teliyaa</h2>
+              <p>Une minute avec ton numéro WhatsApp. C'est gratuit.</p>
+              <a href="/login" class="v-btn light">Créer mon compte</a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class="v-wrap">
+          <span>© 2026 Teliyaa · <a href="mailto:contact@teliyaa.com">contact@teliyaa.com</a></span>
+          <nav aria-label="Informations légales">
+            <a href="/conditions">Conditions d'utilisation</a>
+            <a href="/confidentialite">Confidentialité</a>
+          </nav>
+        </div>
+      </footer>
+    </div>
+    <script>
+      // Logos des opérateurs (public/logos/<id>.png, .svg, .jpg…) : on essaie chaque format, sinon on garde les initiales
+      (function () {
+        if (document.documentElement.className.indexOf('in-app') !== -1) return;
+        var exts = ['png', 'svg', 'jpg', 'jpeg', 'webp'];
+        document.querySelectorAll('#vitrine [data-logo]').forEach(function (el) {
+          var i = 0;
+          (function next() {
+            if (i >= exts.length) return;
+            var img = new Image();
+            img.alt = '';
+            img.onload = function () {
+              el.textContent = '';
+              el.appendChild(img);
+            };
+            img.onerror = next;
+            img.src = '/logos/' + el.getAttribute('data-logo') + '.' + exts[i++];
+          })();
+        });
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
