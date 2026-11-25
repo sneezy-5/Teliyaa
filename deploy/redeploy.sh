@@ -9,7 +9,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-: "${PUBLIC_URL:?Indique l'adresse publique, ex. PUBLIC_URL=https://teliyaa.com ./deploy/redeploy.sh}"
+if [ -z "${PUBLIC_URL:-}" ]; then
+  echo "Indique l'adresse publique, ex. : PUBLIC_URL=https://teliyaa.com ./deploy/redeploy.sh"
+  exit 1
+fi
 [ -f deploy.env ] || { echo "deploy.env introuvable : cp deploy.env.example deploy.env puis remplis-le."; exit 1; }
 
 echo "→ Récupération du code"
