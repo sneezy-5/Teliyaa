@@ -21,7 +21,10 @@ const logoUrl = `${import.meta.env.BASE_URL}icone-512.png`;
       </p>
       <RouterLink to="/login" class="btn light">Créer mon compte</RouterLink>
       <RouterLink to="/login" class="btn ghost light-text">J'ai déjà un compte</RouterLink>
-      <RouterLink to="/confidentialite" class="small light-text center" style="opacity: 0.8">Confidentialité</RouterLink>
+      <p class="small light-text center" style="opacity: 0.8">
+        En continuant, tu acceptes les <RouterLink to="/conditions" class="light-text">conditions d'utilisation</RouterLink> et la
+        <RouterLink to="/confidentialite" class="light-text">politique de confidentialité</RouterLink>.
+      </p>
     </div>
   </main>
 </template>

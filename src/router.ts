@@ -38,6 +38,7 @@ const routes: RouteRecordRaw[] = [
   // Pages publiques : sans compte
   { path: '/u/:username', component: () => import('./pages/PublicProfile.vue') },
   { path: '/confidentialite', component: () => import('./pages/Privacy.vue') },
+  { path: '/conditions', component: () => import('./pages/Terms.vue') },
 
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ];

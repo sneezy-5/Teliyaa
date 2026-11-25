@@ -227,7 +227,7 @@ function clearAll() {
     </button>
     <div v-else-if="!native" class="note info">
       <Icon name="alert" :size="18" />
-      <span>Dans ce navigateur, l'accès au répertoire n'est pas possible. Installe l'app Teliyaa pour retrouver tous tes contacts, ou tape un numéro ci-dessous.</span>
+      <span>Ce navigateur ne permet pas d'ouvrir ton répertoire. Tape le numéro de ton contact ci-dessous, ou cherche son @pseudo. L'app mobile, qui retrouvera tous tes contacts d'un coup, arrive bientôt.</span>
     </div>
 
     <ErrorText :message="error" />

@@ -197,6 +197,13 @@ async function reset() {
           <Icon name="chevron" :size="18" class="muted" />
         </RouterLink>
       </li>
+
+      <li>
+        <RouterLink to="/conditions" class="setting-row">
+          <span class="grow">Conditions d'utilisation</span>
+          <Icon name="chevron" :size="18" class="muted" />
+        </RouterLink>
+      </li>
     </ul>
 
     <button type="button" class="btn ghost danger-text" @click="signOut">Se déconnecter</button>

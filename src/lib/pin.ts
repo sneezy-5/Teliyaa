@@ -24,7 +24,7 @@ export const pinState = reactive({
 });
 
 /** Pages qui restent ouvertes sans PIN (pages publiques et connexion) */
-const PUBLIC = [/^\/u\//, /^\/r\//, /^\/confidentialite/, /^\/login/];
+const PUBLIC = [/^\/u\//, /^\/r\//, /^\/confidentialite/, /^\/conditions/, /^\/login/];
 export const isPublicPath = (path: string) => PUBLIC.some((re) => re.test(path));
 
 /** L'écran du code doit-il s'afficher sur cette page ? */
