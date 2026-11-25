@@ -1,10 +1,12 @@
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { userFromRequest } from './auth.js';
 import { config } from './config.js';
+import { pool } from './db.js';
 import { HttpError, readJson, sendJson } from './http.js';
 import { routes } from './routes.js';
+import { normalizeUsername } from './validate.js';
 
 /**
  * Point d'entrée de chaque requête :
@@ -75,6 +77,8 @@ export async function handle(req, res) {
       const params = Object.fromEntries(route.keys.map((k, i) => [k, decodeURIComponent(match[i + 1])]));
       const user = await userFromRequest(req);
       if (route.auth && !user) throw new HttpError(401, 'Connecte-toi pour continuer.');
+      // Le code WhatsApp seul ne suffit pas : il faut aussi le PIN pour voir ou modifier les données
+      if (route.auth && route.pin !== false && !user.pin_ok) throw new HttpError(403, 'Entre ton code PIN pour continuer.');
       const body = ['POST', 'PUT'].includes(req.method) ? await readJson(req) : {};
       const data = await route.handler({ params, query: url.searchParams, body: body ?? {}, user, ip: clientIp(req) });
       return sendJson(res, 200, data ?? { ok: true }, { ...cors, ...SECURITY_HEADERS });
@@ -132,6 +136,9 @@ async function serveStatic(req, res, pathname) {
     file = path.join(root, 'index.html');
     info = await stat(file).catch(() => null);
     if (!info) return sendJson(res, 404, { error: 'Site non construit.' });
+    // Profil public : aperçu du lien dans WhatsApp, Facebook… (nom de la personne)
+    const profileMatch = rel.match(/^\/u\/([^/]+)\/?$/);
+    if (profileMatch) return serveProfilePage(req, res, file, profileMatch[1]);
   }
 
   const ext = path.extname(file);
@@ -144,4 +151,52 @@ async function serveStatic(req, res, pathname) {
   });
   if (req.method === 'HEAD') return res.end();
   createReadStream(file).pipe(res);
+}
+
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+/**
+ * index.html avec un titre et des balises Open Graph propres à la personne :
+ * WhatsApp affiche alors « Payer Awa Koné » sous le lien partagé.
+ * On n'y met que le nom public, jamais de numéro.
+ */
+async function serveProfilePage(req, res, indexFile, rawUsername) {
+  let html = await readFile(indexFile, 'utf8');
+  let name = null;
+  try {
+    const username = normalizeUsername(rawUsername); // déjà décodé par serveStatic
+    const { rows } = await pool.query(`select full_name from profiles where username = $1`, [username]);
+    name = rows[0]?.full_name ?? null;
+  } catch {
+    /* base indisponible : page normale, sans aperçu personnalisé */
+  }
+
+  if (name) {
+    const proto = config.trustProxy ? String(req.headers['x-forwarded-proto'] ?? 'https').split(',')[0] : 'http';
+    const origin = `${proto}://${req.headers.host}`;
+    const title = escapeHtml(`Payer ${name} — Teliyaa`);
+    const description = escapeHtml(`Wave, Orange Money, MTN, Moov ou banque : envoie de l'argent à ${name} en un geste, sans créer de compte.`);
+    const tags = [
+      `<meta property="og:type" content="profile" />`,
+      `<meta property="og:site_name" content="Teliyaa" />`,
+      `<meta property="og:title" content="${title}" />`,
+      `<meta property="og:description" content="${description}" />`,
+      `<meta property="og:url" content="${escapeHtml(origin + req.url)}" />`,
+      `<meta property="og:image" content="${escapeHtml(origin)}/icone-512.png" />`,
+      `<meta name="twitter:card" content="summary" />`
+    ].join('\n    ');
+    html = html
+      .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+      .replace(/<meta name="description" content="[^"]*"\s*\/?>/, `<meta name="description" content="${description}" />`)
+      .replace('</head>', `    ${tags}\n  </head>`);
+  }
+
+  const body = Buffer.from(html, 'utf8');
+  res.writeHead(200, {
+    'Content-Type': TYPES['.html'],
+    'Content-Length': body.length,
+    'Cache-Control': 'no-cache',
+    ...SECURITY_HEADERS
+  });
+  res.end(req.method === 'HEAD' ? undefined : body);
 }

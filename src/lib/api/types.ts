@@ -44,6 +44,16 @@ export interface Api {
   sendOtp(phoneE164: string): Promise<void>;
   verifyOtp(phoneE164: string, code: string): Promise<SessionUser>;
   signOut(): Promise<void>;
+  /** Supprime définitivement le compte, le profil et les comptes (alias). */
+  deleteAccount(): Promise<void>;
+
+  // Code PIN (vérifié par le serveur)
+  /** Déverrouille la session. Erreur « Code incorrect. N essais restants. » sinon. */
+  verifyPin(pin: string): Promise<void>;
+  /** Premier code, ou changement (`current` = ancien code) */
+  setPin(pin: string, current?: string): Promise<void>;
+  /** Code oublié : seulement juste après une connexion avec le code WhatsApp */
+  resetPin(pin: string): Promise<void>;
 
   // Profil
   getMyProfile(): Promise<Profile | null>;

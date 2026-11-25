@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Teliyaa</string>
     <string name="title_activity_main">Teliyaa</string>
-    <string name="package_name">link.tonapp.app</string>
-    <string name="custom_url_scheme">link.tonapp.app</string>
+    <string name="package_name">com.teliyaa.app</string>
+    <string name="custom_url_scheme">com.teliyaa.app</string>
 </resources>

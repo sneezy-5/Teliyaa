@@ -23,15 +23,18 @@ export interface Provider {
   appStoreUrl?: string;
   /** true quand l'ouverture a été testée sur un vrai téléphone */
   verified: boolean;
+  /** Dégradé de la carte du compte (deux couleurs) et couleur du texte dessus */
+  card: [string, string];
+  cardInk?: string;
 }
 
 export const PROVIDERS: Provider[] = [
-  { id: 'wave', name: 'Wave', kind: 'wallet', short: 'W', androidPackage: 'com.wave.personal', verified: false },
-  { id: 'orange-money', name: 'Orange Money', kind: 'wallet', short: 'OM', verified: false },
-  { id: 'mtn-momo', name: 'MTN MoMo', kind: 'wallet', short: 'MTN', verified: false },
-  { id: 'moov-money', name: 'Moov Money', kind: 'wallet', short: 'MV', verified: false },
-  { id: 'bank', name: 'Ma banque', kind: 'bank', short: 'B', verified: false },
-  { id: 'other', name: 'Autre établissement', kind: 'bank', short: '+', verified: false }
+  { id: 'wave', name: 'Wave', kind: 'wallet', short: 'W', androidPackage: 'com.wave.personal', verified: false, card: ['#1aa7e8', '#0b6fc2'] },
+  { id: 'orange-money', name: 'Orange Money', kind: 'wallet', short: 'OM', verified: false, card: ['#ff8a1f', '#e25c00'] },
+  { id: 'mtn-momo', name: 'MTN MoMo', kind: 'wallet', short: 'MTN', verified: false, card: ['#ffd23f', '#f5b400'], cardInk: '#1f2937' },
+  { id: 'moov-money', name: 'Moov Money', kind: 'wallet', short: 'MV', verified: false, card: ['#2563eb', '#1e3a8a'] },
+  { id: 'bank', name: 'Ma banque', kind: 'bank', short: 'B', verified: false, card: ['#4338ca', '#1e1b4b'] },
+  { id: 'other', name: 'Autre établissement', kind: 'bank', short: '+', verified: false, card: ['#475569', '#1e293b'] }
 ];
 
 export function getProvider(id: string | null | undefined): Provider {

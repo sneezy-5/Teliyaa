@@ -1,12 +1,14 @@
 import { logout, requestCode, verifyCode } from './auth.js';
 import { pool, tx } from './db.js';
 import { HttpError, rateLimiter } from './http.js';
+import { resetPin, setPin, verifyPin } from './pin.js';
 import { aliasInput, normalizeUsername, optionalBool, providerId, requirePhone, usernameError } from './validate.js';
 
 /**
  * Toutes les routes de l'API. Chaque route : (ctx) => données renvoyées en JSON.
  * ctx = { params, query, body, user, ip }
- * `auth: true` = connexion obligatoire.
+ * `auth: true` = connexion obligatoire, ET code PIN déjà tapé sur cette session,
+ * sauf `pin: false` (routes du PIN lui-même, /api/me, déconnexion).
  */
 
 const PROFILE_COLS = 'id, username, full_name, phone, verified, discoverable, findable_by_phone, favorite_provider';
@@ -20,6 +22,7 @@ const codeByIp = rateLimiter({ max: 20, windowMs: 60 * 60 * 1000 });
 const verifyByIp = rateLimiter({ max: 30, windowMs: 15 * 60 * 1000 });
 const publicByIp = rateLimiter({ max: 120, windowMs: 60 * 1000 });
 const searchByUser = rateLimiter({ max: 60, windowMs: 60 * 1000 });
+const pinByUser = rateLimiter({ max: 20, windowMs: 15 * 60 * 1000 });
 
 function uniqueViolation(e, message) {
   if (e?.code === '23505') throw new HttpError(409, message);
@@ -78,8 +81,47 @@ export const routes = [
     method: 'POST',
     path: '/api/auth/logout',
     auth: true,
+    pin: false,
     async handler({ user }) {
       await logout(user);
+      return { ok: true };
+    }
+  },
+
+  // ---------- Code PIN (accessibles avant d'avoir tapé le PIN) ----------
+  {
+    method: 'POST',
+    path: '/api/me/pin/verify',
+    auth: true,
+    pin: false,
+    async handler({ user, body }) {
+      pinByUser(`pin:${user.id}`);
+      await verifyPin(user, body.pin);
+      return { ok: true };
+    }
+  },
+  {
+    // Premier code (comptes existants compris) ou changement : l'ancien code est alors exigé
+    method: 'PUT',
+    path: '/api/me/pin',
+    auth: true,
+    pin: false,
+    async handler({ user, body }) {
+      pinByUser(`pin:${user.id}`);
+      // Changer un code existant demande une session déjà déverrouillée
+      if (user.has_pin && !user.pin_ok) throw new HttpError(403, 'Entre ton code pour continuer.');
+      await setPin(user, body.pin, body.current);
+      return { ok: true };
+    }
+  },
+  {
+    method: 'POST',
+    path: '/api/me/pin/reset',
+    auth: true,
+    pin: false,
+    async handler({ user, body }) {
+      pinByUser(`pin:${user.id}`);
+      await resetPin(user, body.pin);
       return { ok: true };
     }
   },
@@ -89,8 +131,27 @@ export const routes = [
     method: 'GET',
     path: '/api/me',
     auth: true,
+    pin: false,
     async handler({ user }) {
-      return { user: { id: user.id, phone: user.phone }, profile: await myProfile(user.id) };
+      return {
+        user: { id: user.id, phone: user.phone, has_pin: user.has_pin, pin_ok: user.pin_ok },
+        profile: await myProfile(user.id)
+      };
+    }
+  },
+  {
+    // Suppression du compte (exigée par le Play Store) : profil, alias, sessions, historique de recherche.
+    method: 'DELETE',
+    path: '/api/me',
+    auth: true,
+    async handler({ user }) {
+      await tx(async (db) => {
+        await db.query(`delete from otp_codes where phone = $1`, [user.phone]);
+        await db.query(`delete from otp_sends where phone = $1`, [user.phone]);
+        // Supprime aussi, en cascade : profil, alias, sessions, compteurs de recherche de contacts
+        await db.query(`delete from users where id = $1`, [user.id]);
+      });
+      return { ok: true };
     }
   },
   {

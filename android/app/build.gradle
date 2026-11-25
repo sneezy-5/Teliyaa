@@ -4,7 +4,8 @@ android {
     namespace = "link.tonapp.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "link.tonapp.app"
+        // Identifiant Play Store (définitif après publication). Le « namespace » ci-dessus est interne au code.
+        applicationId "com.teliyaa.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

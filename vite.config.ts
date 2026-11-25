@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
       vue(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+        includeAssets: ['icone-512.png'],
         manifest: {
           name: 'Teliyaa — tous tes alias PI-SPI',
           short_name: 'Teliyaa',
@@ -30,9 +30,8 @@ export default defineConfig(({ mode }) => {
           start_url: '.',
           scope: '.',
           icons: [
-            { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
-            { src: 'icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+            // Logo Teliyaa (le navigateur le réduit lui-même aux autres tailles)
+            { src: 'icone-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
           ]
         },
         workbox: {

@@ -3,7 +3,29 @@ import { handle } from './app.js';
 import { config } from './config.js';
 import { cleanup, initDb, pool } from './db.js';
 
-await initDb();
+try {
+  await initDb();
+} catch (e) {
+  // Message clair au lieu d'une longue trace (le service redémarre tout seul)
+  const host = (() => {
+    try {
+      const u = new URL(config.databaseUrl);
+      return `${u.username}@${u.hostname}:${u.port || 5432}${u.pathname}`;
+    } catch {
+      return 'DATABASE_URL illisible';
+    }
+  })();
+  const hints = {
+    '28P01': 'mot de passe refusé',
+    '08P01': 'identifiants refusés (mot de passe, ou utilisateur absent de userlist.txt de PgBouncer)',
+    '3D000': "la base n'existe pas",
+    ECONNREFUSED: 'serveur injoignable',
+    ENOTFOUND: 'nom du serveur introuvable (réseau Docker ?)'
+  };
+  console.error(`Connexion à la base impossible (${host}) : ${hints[e.code] ?? e.message}`);
+  console.error('Vérifie DATABASE_URL dans deploy.env (caractères spéciaux du mot de passe encodés, ex. @ → %40), puis redéploie.');
+  process.exit(1);
+}
 console.log('Base de données prête.');
 
 const server = http.createServer((req, res) => {

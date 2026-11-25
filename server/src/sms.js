@@ -30,7 +30,7 @@ export async function sendCode(phoneE164, code) {
 
 /** WhatsApp (Poolchat) : numéro sans le « + » (ex. 2250707070707). */
 async function sendWhatsApp(phoneE164, text) {
-  const url = process.env.WHATSAPP_API_URL || 'https://api.poolchat.online/api/api/messages/send';
+  const url = process.env.WHATSAPP_API_URL || 'https://api.poolchat.online/api/messages/send';
   const key = process.env.WHATSAPP_API_KEY;
   if (!key) throw new Error('WHATSAPP_API_KEY manquante (deploy.env).');
   const res = await fetch(url, {

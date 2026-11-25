@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import QRCode from 'qrcode';
 import { computed, onMounted, ref, watchEffect } from 'vue';
+import AliasCard from '../components/AliasCard.vue';
 import BottomNav from '../components/BottomNav.vue';
 import Icon from '../components/Icon.vue';
-import ProviderBadge from '../components/ProviderBadge.vue';
 import Spinner from '../components/Spinner.vue';
 import { api } from '../lib/api';
 import { FEATURES } from '../lib/features';
-import { formatAmount, formatPhone } from '../lib/format';
+import { formatAmount } from '../lib/format';
 import { copyText, prettyLink, profileLink, shareText } from '../lib/links';
-import { aliasDisplayName } from '../lib/providers';
 import { session } from '../lib/session';
 import { toast } from '../lib/toast';
 import type { Alias, Payment } from '../lib/types';
@@ -98,18 +97,9 @@ const copyLink = async () => toast((await copyText(link.value)) ? 'Lien copié' 
       <p class="muted small">Ajoute l'alias PI-SPI de ton Wave, Orange Money, MTN, Moov ou de ta banque.</p>
       <RouterLink to="/aliases/new" class="btn">+ Ajouter un compte</RouterLink>
     </div>
-    <ul v-else class="list">
+    <ul v-else class="acct-list">
       <li v-for="a in aliases" :key="a.id">
-        <RouterLink :to="`/aliases/${a.id}`" class="card alias">
-          <ProviderBadge :provider-id="a.provider_id" :label="a.label" />
-          <span class="grow">
-            <strong>{{ aliasDisplayName(a) }}</strong>
-            <span v-if="a.is_primary" class="pill ok" style="margin-left: 8px">Principal</span>
-            <span v-if="!a.visible" class="pill" style="margin-left: 8px">Masqué</span>
-            <span class="muted small block mono">{{ a.alias_type === 'phone' ? formatPhone(a.value) : a.value }}</span>
-          </span>
-          <Icon name="chevron" :size="18" class="muted" />
-        </RouterLink>
+        <AliasCard :alias="a" :to="`/aliases/${a.id}`" />
       </li>
     </ul>
   </main>

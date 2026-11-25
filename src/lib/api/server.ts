@@ -96,6 +96,25 @@ export function createServerApi(baseUrl: string): Api {
       listeners.forEach((l) => l(null));
     },
 
+    async deleteAccount() {
+      await call('DELETE', '/api/me');
+      setToken(null);
+      listeners.forEach((l) => l(null));
+    },
+
+    // ---------- Code PIN ----------
+    async verifyPin(pin) {
+      await call('POST', '/api/me/pin/verify', { pin });
+    },
+
+    async setPin(pin, current) {
+      await call('PUT', '/api/me/pin', { pin, current });
+    },
+
+    async resetPin(pin) {
+      await call('POST', '/api/me/pin/reset', { pin });
+    },
+
     // ---------- Profil ----------
     async getMyProfile() {
       return (await me())?.profile ?? null;

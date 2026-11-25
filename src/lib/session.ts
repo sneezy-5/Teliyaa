@@ -47,6 +47,11 @@ export async function refreshProfile() {
 
 export const session = readonly(state);
 
+/** Le PIN vient d'être tapé ou créé : le serveur donne maintenant accès aux données. */
+export function markPinOk() {
+  if (state.user) state.user = { ...state.user, has_pin: true, pin_ok: true };
+}
+
 /** À appeler juste après la vérification du code SMS (n'attend pas l'événement d'auth). */
 export async function signedIn(user: SessionUser) {
   await load(user);

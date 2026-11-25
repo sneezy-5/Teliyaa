@@ -2,6 +2,7 @@ import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 
 import { config } from './config.js';
 import { pool, tx } from './db.js';
 import { HttpError } from './http.js';
+import { RESET_WINDOW_SQL } from './pin.js';
 import { sendCode } from './sms.js';
 
 /**
@@ -18,7 +19,17 @@ const SESSION_DAYS = 180;
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 const codeHash = (phone, code) => createHmac('sha256', config.secret).update(`${phone}:${code}`).digest('hex');
 
+/**
+ * Compte de test pour la vérification Play Store / App Store (désactivé si vide) :
+ * REVIEW_PHONE=+2250100000000 et REVIEW_CODE=6 chiffres dans deploy.env.
+ * Pour ce numéro, aucun message n'est envoyé et seul REVIEW_CODE est accepté.
+ */
+const REVIEW_PHONE = process.env.REVIEW_PHONE || '';
+const REVIEW_CODE = process.env.REVIEW_CODE || '';
+const isReview = (phone) => Boolean(REVIEW_PHONE) && /^\d{6}$/.test(REVIEW_CODE) && phone === REVIEW_PHONE;
+
 export async function requestCode(phone, ip) {
+  if (isReview(phone)) return;
   // Limites par numéro : 3 codes / 15 min, 10 / jour
   const { rows } = await pool.query(
     `select count(*) filter (where created_at > now() - interval '15 minutes')::int as recent,
@@ -51,6 +62,12 @@ export async function requestCode(phone, ip) {
 export async function verifyCode(phone, code) {
   if (!/^\d{6}$/.test(String(code ?? ''))) throw new HttpError(400, 'Le code a 6 chiffres.');
 
+  if (isReview(phone)) {
+    const ok = timingSafeEqual(Buffer.from(String(code)), Buffer.from(REVIEW_CODE));
+    if (!ok) throw new HttpError(400, 'Code incorrect.');
+    return openSession(phone);
+  }
+
   const { rows } = await pool.query(`select code_hash, attempts, expires_at > now() as valid from otp_codes where phone = $1`, [phone]);
   const row = rows[0];
   if (!row || !row.valid) throw new HttpError(400, 'Code incorrect ou expiré. Demande un nouveau code.');
@@ -66,16 +83,22 @@ export async function verifyCode(phone, code) {
     throw new HttpError(400, 'Code incorrect.');
   }
 
+  await pool.query(`delete from otp_codes where phone = $1`, [phone]);
+  return openSession(phone);
+}
+
+/** Crée le compte au besoin et ouvre une session. */
+function openSession(phone) {
   return tx(async (db) => {
-    await db.query(`delete from otp_codes where phone = $1`, [phone]);
     const user = (
       await db.query(
         `insert into users (phone) values ($1)
          on conflict (phone) do update set phone = excluded.phone
-         returning id, phone`,
+         returning id, phone, pin_hash is not null as has_pin`,
         [phone]
       )
     ).rows[0];
+    user.pin_ok = false; // le PIN est demandé juste après
     const token = randomBytes(32).toString('base64url');
     await db.query(
       `insert into sessions (token_hash, user_id, expires_at) values ($1, $2, now() + make_interval(days => $3))`,
@@ -91,7 +114,9 @@ export async function userFromRequest(req) {
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token || token.length > 200) return null;
   const { rows } = await pool.query(
-    `select u.id, u.phone from sessions s join users u on u.id = s.user_id
+    `select u.id, u.phone, u.pin_hash is not null as has_pin, s.pin_ok,
+            s.created_at > now() - interval '${RESET_WINDOW_SQL}' as fresh
+       from sessions s join users u on u.id = s.user_id
       where s.token_hash = $1 and s.expires_at > now()`,
     [sha256(token)]
   );

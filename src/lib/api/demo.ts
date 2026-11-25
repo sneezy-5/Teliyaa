@@ -19,6 +19,7 @@ interface Db {
   requests: PaymentRequest[];
   payments: Payment[];
   session: string | null;
+  pins?: Record<string, string>;
 }
 
 const now = () => new Date().toISOString();
@@ -83,8 +84,17 @@ const clone = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringify(x
 const wait = (ms = 120) => new Promise((r) => setTimeout(r, ms));
 const listeners = new Set<(u: SessionUser | null) => void>();
 
+/** Démo : PIN gardé tel quel dans le navigateur (le vrai serveur ne garde qu'une empreinte) */
+let demoPinOk = false;
+const pins = (db: Db) => (db.pins ??= {});
+
 function currentUser(db: Db): SessionUser | null {
-  return db.users.find((u) => u.id === db.session) ?? null;
+  const u = db.users.find((x) => x.id === db.session);
+  return u ? { id: u.id, phone: u.phone, has_pin: Boolean(pins(db)[u.id]), pin_ok: demoPinOk } : null;
+}
+
+function demoPinCheck(pin: string) {
+  if (!/^\d{4}$/.test(pin)) throw new Error('Le code doit faire 4 chiffres.');
 }
 
 function requireUser(db: Db): SessionUser {
@@ -129,6 +139,31 @@ export const demoApi: Api = {
     await wait(400);
   },
 
+  async verifyPin(pin) {
+    const db = load();
+    const u = requireUser(db);
+    if (pins(db)[u.id] !== pin) throw new Error('Code incorrect.');
+    demoPinOk = true;
+  },
+
+  async setPin(pin, current) {
+    demoPinCheck(pin);
+    const db = load();
+    const u = requireUser(db);
+    if (pins(db)[u.id] && pins(db)[u.id] !== current) throw new Error('Code actuel incorrect.');
+    pins(db)[u.id] = pin;
+    demoPinOk = true;
+    save(db);
+  },
+
+  async resetPin(pin) {
+    demoPinCheck(pin);
+    const db = load();
+    pins(db)[requireUser(db).id] = pin;
+    demoPinOk = true;
+    save(db);
+  },
+
   async verifyOtp(phone, code) {
     await wait(300);
     if (code.trim() !== DEMO_OTP) throw new Error(`Code incorrect. En mode démo, le code est ${DEMO_OTP}.`);
@@ -139,13 +174,27 @@ export const demoApi: Api = {
       db.users.push(user);
     }
     db.session = user.id;
+    demoPinOk = false;
     save(db);
-    listeners.forEach((l) => l(clone(user!)));
-    return clone(user);
+    const me = currentUser(db)!;
+    listeners.forEach((l) => l(clone(me)));
+    return clone(me);
   },
 
   async signOut() {
     const db = load();
+    db.session = null;
+    demoPinOk = false;
+    save(db);
+    listeners.forEach((l) => l(null));
+  },
+
+  async deleteAccount() {
+    const db = load();
+    const u = requireUser(db);
+    db.aliases = db.aliases.filter((a) => a.owner_id !== u.id);
+    db.profiles = db.profiles.filter((p) => p.id !== u.id);
+    db.users = db.users.filter((x) => x.id !== u.id);
     db.session = null;
     save(db);
     listeners.forEach((l) => l(null));

@@ -10,6 +10,8 @@
         <string>Teliyaa</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Teliyaa compare les numéros de tes contacts pour te montrer ceux qui ont un compte et leurs alias de paiement. Ton répertoire n'est pas enregistré sur nos serveurs.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Teliyaa utilise Face ID pour ouvrir l'app sans taper ton code.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

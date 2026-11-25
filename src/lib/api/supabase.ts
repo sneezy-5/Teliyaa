@@ -58,8 +58,17 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       return u;
     },
 
+    // Ancienne version (Supabase abandonné) : pas de code PIN
+    verifyPin: () => Promise.reject(new Error('Non disponible.')),
+    setPin: () => Promise.reject(new Error('Non disponible.')),
+    resetPin: () => Promise.reject(new Error('Non disponible.')),
+
     async signOut() {
       await sb.auth.signOut();
+    },
+
+    async deleteAccount() {
+      throw new Error("Suppression du compte non disponible avec Supabase (backend abandonné, voir server/).");
     },
 
     async getMyProfile() {

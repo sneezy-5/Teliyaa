@@ -77,6 +77,12 @@ alter table aliases add column if not exists value_hash text
   ) stored;
 create index if not exists aliases_value_hash_idx on aliases (value_hash) where value_hash is not null;
 
+-- Code PIN (4 chiffres) : empreinte scrypt seulement, jamais le code.
+-- Une session n'a accès aux données qu'après le bon PIN (pin_ok), même avec le code WhatsApp.
+alter table users add column if not exists pin_hash text;
+alter table users add column if not exists pin_failures int not null default 0;
+alter table sessions add column if not exists pin_ok boolean not null default false;
+
 -- Compteur anti-abus de la recherche de contacts
 create table if not exists contact_lookups (
   id bigint generated always as identity primary key,

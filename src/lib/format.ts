@@ -13,14 +13,14 @@ export function parseAmount(input: string): number | null {
 }
 
 export const COUNTRIES = [
-  { code: '+225', name: "Côte d'Ivoire", digits: 10 },
-  { code: '+221', name: 'Sénégal', digits: 9 },
-  { code: '+226', name: 'Burkina Faso', digits: 8 },
-  { code: '+223', name: 'Mali', digits: 8 },
-  { code: '+229', name: 'Bénin', digits: 10 },
-  { code: '+228', name: 'Togo', digits: 8 },
-  { code: '+227', name: 'Niger', digits: 8 },
-  { code: '+245', name: 'Guinée-Bissau', digits: 9 }
+  { code: '+225', name: "Côte d'Ivoire", digits: 10, flag: '🇨🇮' },
+  { code: '+221', name: 'Sénégal', digits: 9, flag: '🇸🇳' },
+  { code: '+226', name: 'Burkina Faso', digits: 8, flag: '🇧🇫' },
+  { code: '+223', name: 'Mali', digits: 8, flag: '🇲🇱' },
+  { code: '+229', name: 'Bénin', digits: 10, flag: '🇧🇯' },
+  { code: '+228', name: 'Togo', digits: 8, flag: '🇹🇬' },
+  { code: '+227', name: 'Niger', digits: 8, flag: '🇳🇪' },
+  { code: '+245', name: 'Guinée-Bissau', digits: 9, flag: '🇬🇼' }
 ] as const;
 
 /** Numéro local + indicatif → format E.164 (+2250700000001), ou null si la longueur ne correspond pas. */

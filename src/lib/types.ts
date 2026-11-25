@@ -93,4 +93,8 @@ export interface PublicRequest {
 export interface SessionUser {
   id: string;
   phone: string;
+  /** Un code PIN existe pour ce compte */
+  has_pin?: boolean;
+  /** Le PIN a été tapé sur cette session (sinon le serveur refuse l'accès aux données) */
+  pin_ok?: boolean;
 }

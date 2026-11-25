@@ -3,11 +3,11 @@ import { computed, ref } from 'vue';
 import { api } from '../lib/api';
 import { FEATURES } from '../lib/features';
 import { formatAmount, formatPhone } from '../lib/format';
-import { copyText } from '../lib/links';
 import { aliasDisplayName, getProvider, PROVIDERS } from '../lib/providers';
 import { aliasFor, preferredApp, quickPay, rememberApp } from '../lib/quickPay';
 import { toast } from '../lib/toast';
 import type { PublicAlias, PublicProfile } from '../lib/types';
+import AliasCard from './AliasCard.vue';
 import ErrorText from './ErrorText.vue';
 import Icon from './Icon.vue';
 import ProviderBadge from './ProviderBadge.vue';
@@ -46,11 +46,6 @@ const error = ref<string | null>(null);
 const apps = PROVIDERS.filter((p) => p.id !== 'other');
 const firstName = computed(() => props.profile.full_name.split(' ')[0]);
 const showValue = (a: PublicAlias) => (a.alias_type === 'phone' ? formatPhone(a.value) : a.value);
-
-async function copy(alias: PublicAlias) {
-  const ok = await copyText(alias.value);
-  toast(ok ? 'Alias copié' : 'Copie impossible, recopie-le à la main');
-}
 
 async function payWith(providerId: string) {
   const alias = aliasFor(props.profile.aliases, providerId);
@@ -155,16 +150,8 @@ async function declare() {
       </div>
 
       <div class="section-head"><h2>Comptes de {{ firstName }}</h2></div>
-      <ul class="list">
-        <li v-for="a in profile.aliases" :key="a.id" class="card alias">
-          <ProviderBadge :provider-id="a.provider_id" :label="a.label" />
-          <span class="grow">
-            <strong>{{ aliasDisplayName(a) }}</strong>
-            <span v-if="a.is_primary" class="pill ok" style="margin-left: 8px">Principal</span>
-            <span class="muted small block mono">{{ showValue(a) }}</span>
-          </span>
-          <button type="button" class="link-btn" :aria-label="`Copier ${aliasDisplayName(a)}`" @click="copy(a)"><Icon name="copy" :size="18" /></button>
-        </li>
+      <ul class="acct-list">
+        <li v-for="a in profile.aliases" :key="a.id"><AliasCard :alias="a" /></li>
       </ul>
     </template>
   </div>

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import ErrorText from '../components/ErrorText.vue';
-import TopBar from '../components/TopBar.vue';
+import Icon from '../components/Icon.vue';
 import { api } from '../lib/api';
 import { normalizeUsername, validateUsername } from '../lib/format';
 import { refreshProfile, session } from '../lib/session';
@@ -37,7 +37,7 @@ const hint = computed(() => {
   if (formatError.value) return { text: formatError.value, cls: 'error' };
   if (available.value === false) return { text: 'Déjà pris.', cls: 'error' };
   if (available.value) return { text: 'Disponible', cls: 'ok-text' };
-  return { text: 'Unique, 3 à 20 caractères. Les gens te trouveront avec.', cls: 'muted' };
+  return null;
 });
 
 async function submit() {
@@ -59,10 +59,12 @@ async function submit() {
 </script>
 
 <template>
-  <main class="page">
-    <TopBar :title="editing ? 'Modifier mon profil' : 'Ton profil'" :back="editing ? '/profile' : undefined" />
-    <form class="stack" @submit.prevent="submit">
-      <p v-if="!editing" class="muted">Ton nom et ton pseudo apparaissent sur ta page de paiement.</p>
+  <main class="page auth">
+    <RouterLink v-if="editing" to="/profile" class="icon-btn auth-back" aria-label="Retour"><Icon name="back" :size="24" /></RouterLink>
+    <div v-else style="height: 44px" />
+    <form class="auth-form" @submit.prevent="submit">
+      <h1>{{ editing ? 'Nom et pseudo' : 'Qui es-tu ?' }}</h1>
+      <p class="muted">Affichés sur ta page de paiement.</p>
       <label class="field">
         <span>Nom complet</span>
         <input v-model="fullName" autocomplete="name" placeholder="Aminata Koné" />
@@ -73,7 +75,7 @@ async function submit() {
           <span aria-hidden="true">@</span>
           <input v-model="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="aminata.k" />
         </div>
-        <small :class="hint.cls">{{ hint.text }}</small>
+        <small v-if="hint" :class="hint.cls">{{ hint.text }}</small>
       </label>
       <ErrorText :message="error" />
       <button class="btn" :disabled="busy || available === false">{{ busy ? 'Enregistrement…' : editing ? 'Enregistrer' : 'Continuer' }}</button>
