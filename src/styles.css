@@ -93,8 +93,9 @@ button, input, select { font: inherit; color: inherit; }
 .badge-ico { width: 44px; height: 44px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
 .badge-ico.bank { background: var(--blue-soft); color: var(--blue); }
 .badge-ico.warm { background: var(--warm-soft); color: var(--warm); }
-.badge-ico.has-logo { background: #fff; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
-.badge-ico.has-logo img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+/* Logos (carrés) : carré aux coins arrondis, comme une icône d'app, sans marge autour */
+.badge-ico.has-logo { background: #fff; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
+.badge-ico.has-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .bank-badge { overflow: hidden; letter-spacing: -0.02em; }
 .bank-badge img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
 /* Choix de la banque : recherche + liste */
@@ -157,7 +158,7 @@ button, input, select { font: inherit; color: inherit; }
 .acct-top { display: flex; align-items: center; gap: 12px; }
 .acct-badge { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; font-weight: 800; font-size: 12.5px; letter-spacing: -0.02em; background: rgba(255, 255, 255, 0.22); color: inherit; }
 .acct-badge.has-logo { background: #fff; overflow: hidden; }
-.acct-badge.has-logo img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+.acct-badge.has-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .acct-name { display: block; font-size: 16px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .acct-sub { display: block; font-size: 12.5px; opacity: 0.8; }
 .acct-tag { flex: none; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.24); }
@@ -215,6 +216,7 @@ button, input, select { font: inherit; color: inherit; }
 .btn.secondary:hover { background: #e0e4ff; }
 .btn.big { min-height: 64px; font-size: 17px; }
 .btn.big .badge-ico { width: 36px; height: 36px; background: #fff; color: var(--accent); font-size: 12px; }
+.btn.big .badge-ico.has-logo { border-radius: 10px; box-shadow: none; }
 .link-btn.center { text-align: center; align-self: center; }
 
 /* Choix de mon app pour payer (une seule fois) */
