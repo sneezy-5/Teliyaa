@@ -156,6 +156,8 @@ button, input, select { font: inherit; color: inherit; }
 .acct.hidden { filter: grayscale(0.6); opacity: 0.75; }
 .acct-top { display: flex; align-items: center; gap: 12px; }
 .acct-badge { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; font-weight: 800; font-size: 12.5px; letter-spacing: -0.02em; background: rgba(255, 255, 255, 0.22); color: inherit; }
+.acct-badge.has-logo { background: #fff; overflow: hidden; }
+.acct-badge.has-logo img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
 .acct-name { display: block; font-size: 16px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .acct-sub { display: block; font-size: 12.5px; opacity: 0.8; }
 .acct-tag { flex: none; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.24); }
@@ -163,8 +165,14 @@ button, input, select { font: inherit; color: inherit; }
 .acct-value { flex: 1; min-width: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.02em; }
 .acct-copy { position: relative; z-index: 2; flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: inherit; background: rgba(255, 255, 255, 0.22); }
 .acct-copy:active { transform: scale(0.94); }
-.acct-link { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.acct-link { position: absolute; inset: 0; z-index: 1; border-radius: inherit; border: 0; padding: 0; background: transparent; cursor: pointer; }
+.acct-pay { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; padding: 8px 12px; border-radius: 999px; background: #fff; color: var(--ink); }
 .acct:has(.acct-link:active) { transform: scale(0.985); }
+/* Contact trouvé : la ligne ouvre sa fiche, le rond à droite envoie tout de suite */
+.contact-row { display: flex; align-items: center; gap: 8px; }
+.contact-row > .card { flex: 1; min-width: 0; }
+.quick-send { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.quick-send:active { transform: scale(0.94); }
 .add-acct { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; border-radius: 20px; border: 2px dashed #c7cbe6; color: var(--accent); font-weight: 700; text-decoration: none; background: var(--accent-soft); }
 
 /* ---------- Page publique d'un profil ---------- */

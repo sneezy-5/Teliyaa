@@ -34,18 +34,20 @@ describe('format', () => {
   });
 });
 
-describe('ouverture des apps', () => {
-  it("dans le navigateur Android, n'essaie pas d'ouvrir l'app (Chrome renverrait vers le Play Store)", () => {
-    // L'ouverture directe se fait dans l'app installée (Capacitor) avec le nom de paquet.
-    expect(providerOpenUrl(getProvider('wave'), 'Mozilla/5.0 (Linux; Android 13)')).toBeNull();
+describe('ouverture des apps depuis le navigateur', () => {
+  const ANDROID = 'Mozilla/5.0 (Linux; Android 13)';
+  const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)';
+
+  it('ouvre la fiche Play Store sur Android', () => {
+    expect(providerOpenUrl(getProvider('wave'), ANDROID)).toBe('https://play.google.com/store/apps/details?id=com.wave.personal');
   });
-  it("sur iPhone, utilise le lien d'ouverture de l'app quand il est connu", () => {
-    const provider = { ...getProvider('wave'), iosScheme: 'exemple://' };
-    expect(providerOpenUrl(provider, 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toBe('exemple://');
+  it("ouvre l'App Store sur iPhone, ou le lien d'ouverture de l'app s'il est connu", () => {
+    expect(providerOpenUrl(getProvider('wave'), IPHONE)).toBe('https://apps.apple.com/app/id1523884528');
+    expect(providerOpenUrl({ ...getProvider('wave'), iosScheme: 'exemple://' }, IPHONE)).toBe('exemple://');
   });
-  it("ne fait rien quand l'app n'a pas d'identifiant", () => {
-    expect(providerOpenUrl(getProvider('orange-money'), 'Mozilla/5.0 (Linux; Android 13)')).toBeNull();
-    expect(providerOpenUrl(getProvider('wave'), 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toBeNull();
+  it("ne fait rien sur ordinateur ni pour une banque", () => {
+    expect(providerOpenUrl(getProvider('wave'), 'Mozilla/5.0 (Macintosh)')).toBeNull();
+    expect(providerOpenUrl(getProvider('bank'), ANDROID)).toBeNull();
   });
 });
 

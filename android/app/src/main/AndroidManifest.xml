@@ -47,5 +47,8 @@
     -->
     <queries>
         <package android:name="com.wave.personal" />
+        <package android:name="com.orange.orangemoneyafrique" />
+        <package android:name="mtnft.momo.consumer" />
+        <package android:name="ci.moovmoney.mmpayapi" />
     </queries>
 </manifest>

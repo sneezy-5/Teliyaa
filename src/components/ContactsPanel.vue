@@ -3,7 +3,6 @@ import { computed, onMounted, ref } from 'vue';
 import Avatar from './Avatar.vue';
 import ErrorText from './ErrorText.vue';
 import Icon from './Icon.vue';
-import VerifiedPill from './VerifiedPill.vue';
 import { api } from '../lib/api';
 import {
   canPickContacts,
@@ -33,7 +32,7 @@ import {
 import { useRouter } from 'vue-router';
 import { FEATURES } from '../lib/features';
 import { getProvider } from '../lib/providers';
-import { aliasFor, preferredApp, quickPay } from '../lib/quickPay';
+import { aliasFor, payMessage, preferredApp, quickPay } from '../lib/quickPay';
 import { session } from '../lib/session';
 import { toast } from '../lib/toast';
 
@@ -98,7 +97,8 @@ async function send(c: SavedContact) {
   const { result, copied } = await quickPay(alias, app);
   // Au retour de l'app, la page demande « Tu as payé ? » (si activé ; en v1 on reste sur la liste)
   if (FEATURES.paymentDeclarations) await router.push({ path: `/send/${m.username}`, query: { sent: app } });
-  if (result === 'unsupported') toast(copied ? `Alias copié. Ouvre ${getProvider(app).name} et colle-le.` : 'Copie impossible.');
+  const message = payMessage(result, copied, getProvider(app).name);
+  if (message) toast(message);
 }
 
 function save(list: SavedContact[]) {
@@ -241,15 +241,19 @@ function clearAll() {
     <template v-if="onApp.length">
       <div class="section-head"><h2>Sur Teliyaa ({{ onApp.length }})</h2></div>
       <ul class="list">
-        <li v-for="c in onApp" :key="c.phone">
-          <button type="button" class="card alias choice" :aria-label="`Envoyer de l'argent à ${label(c)}`" @click="send(c)">
+        <li v-for="c in onApp" :key="c.phone" class="contact-row">
+          <!-- Toucher le contact : sa fiche avec tous ses comptes, pour choisir où payer -->
+          <RouterLink :to="`/send/${c.match!.username}`" class="card alias choice" :aria-label="`Voir les comptes de ${label(c)}`">
             <Avatar :name="label(c)" />
             <span class="grow">
-              <strong>{{ label(c) }}</strong> <VerifiedPill v-if="c.match!.verified" />
+              <strong>{{ label(c) }}</strong>
               <span class="muted small block">@{{ c.match!.username }}</span>
               <span v-if="providers(c)" class="small block ok-text">{{ providers(c) }}</span>
             </span>
-            <span class="pill ok">Envoyer</span>
+          </RouterLink>
+          <!-- Raccourci : payer tout de suite avec mon app, sur le compte le plus adapté -->
+          <button type="button" class="quick-send" :aria-label="`Envoyer tout de suite à ${label(c)}`" @click="send(c)">
+            <Icon name="send" :size="20" />
           </button>
         </li>
       </ul>

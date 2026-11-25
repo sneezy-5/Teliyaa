@@ -11,7 +11,7 @@ import { api } from '../lib/api';
 import { resetDemo } from '../lib/api/demo';
 import { formatPhone } from '../lib/format';
 import { biometricAvailable, biometricEnabled, biometricVerify, pinState, setBiometricEnabled } from '../lib/pin';
-import { getProvider, PROVIDERS } from '../lib/providers';
+import { getProvider, PAYER_APPS } from '../lib/providers';
 import { preferredApp, rememberApp } from '../lib/quickPay';
 import { refreshProfile, session } from '../lib/session';
 
@@ -22,7 +22,7 @@ const confirmReset = ref(false);
 const choosingApp = ref(false);
 const myApp = ref<string | null>(preferredApp());
 const profile = computed(() => session.profile);
-const apps = PROVIDERS.filter((p) => p.id !== 'other');
+const apps = PAYER_APPS;
 
 async function update(patch: { discoverable?: boolean; findable_by_phone?: boolean }) {
   if (!profile.value) return;

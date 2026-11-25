@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           navigateFallback: isStaticDemo ? undefined : '/index.html',
-          globPatterns: ['**/*.{js,css,html,svg,png,woff2}']
+          globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,webp,woff2}']
         }
       })
     ]

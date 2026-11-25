@@ -3,8 +3,8 @@ import { computed, ref } from 'vue';
 import { api } from '../lib/api';
 import { FEATURES } from '../lib/features';
 import { formatAmount, formatPhone } from '../lib/format';
-import { aliasDisplayName, getProvider, PROVIDERS } from '../lib/providers';
-import { aliasFor, preferredApp, quickPay, rememberApp } from '../lib/quickPay';
+import { aliasDisplayName, getProvider, isPayerApp, PAYER_APPS } from '../lib/providers';
+import { aliasFor, payMessage, preferredApp, quickPay, rememberApp } from '../lib/quickPay';
 import { toast } from '../lib/toast';
 import type { PublicAlias, PublicProfile } from '../lib/types';
 import AliasCard from './AliasCard.vue';
@@ -31,7 +31,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ declared: [] }>();
 
-const myApp = ref<string | null>(props.favoriteProvider || preferredApp());
+const myApp = ref<string | null>(isPayerApp(props.favoriteProvider) ? props.favoriteProvider! : preferredApp());
 const choosing = ref(false);
 const usedProvider = ref<string | null>(props.sentWith ?? null);
 const usedAlias = ref<PublicAlias | null>(props.sentWith ? aliasFor(props.profile.aliases, props.sentWith) : null);
@@ -43,12 +43,26 @@ const busy = ref(false);
 const done = ref(false);
 const error = ref<string | null>(null);
 
-const apps = PROVIDERS.filter((p) => p.id !== 'other');
+// Payer avec : Wave, Orange Money, MTN MoMo, Moov Money (pas « la banque » pour l'instant)
+const apps = PAYER_APPS;
 const firstName = computed(() => props.profile.full_name.split(' ')[0]);
 const showValue = (a: PublicAlias) => (a.alias_type === 'phone' ? formatPhone(a.value) : a.value);
 
+/** Compte choisi à la main dans la liste (sinon on prend le plus adapté à mon app) */
+const pickedAlias = ref<PublicAlias | null>(null);
+
+/** Toucher une carte : payer sur ce compte précis, avec mon app */
+function payTo(alias: PublicAlias) {
+  pickedAlias.value = alias;
+  if (myApp.value) return payWith(myApp.value);
+  // Je n'ai pas encore choisi mon app : la grille s'affiche plus haut, on y remonte
+  choosing.value = true;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 async function payWith(providerId: string) {
-  const alias = aliasFor(props.profile.aliases, providerId);
+  const alias = pickedAlias.value ?? aliasFor(props.profile.aliases, providerId);
+  pickedAlias.value = null;
   if (!alias) return;
   rememberApp(providerId);
   myApp.value = providerId;
@@ -57,8 +71,8 @@ async function payWith(providerId: string) {
   usedAlias.value = alias;
   awaiting.value = FEATURES.paymentDeclarations;
   const { result, copied } = await quickPay(alias, providerId);
-  const name = getProvider(providerId).name;
-  if (result === 'unsupported') toast(copied ? `Alias copié. Ouvre ${name} et colle-le.` : `Ouvre ${name} et envoie à ${showValue(alias)}.`);
+  const message = payMessage(result, copied, getProvider(providerId).name);
+  if (message) toast(message);
 }
 
 async function declare() {
@@ -135,6 +149,7 @@ async function declare() {
       <!-- Première fois : je choisis mon app (retenue ensuite) -->
       <template v-else>
         <h2>Payer avec…</h2>
+        <p v-if="pickedAlias" class="muted small">Vers {{ aliasDisplayName(pickedAlias) }} · {{ showValue(pickedAlias) }}</p>
         <div class="app-grid">
           <button v-for="p in apps" :key="p.id" type="button" class="app-tile" @click="payWith(p.id)">
             <ProviderBadge :provider-id="p.id" />
@@ -146,12 +161,16 @@ async function declare() {
 
       <div class="note warn">
         <Icon name="alert" />
-        <span>Avant de valider, vérifie que ton app affiche bien le nom <strong>{{ profile.full_name.toUpperCase() }}</strong>. Sinon, n'envoie pas.</span>
+        <span>
+          Avant de valider, regarde le <strong>nom du titulaire</strong> affiché par ton app. Si ce n'est pas la personne que tu veux payer,
+          n'envoie pas. Teliyaa ne vérifie pas les noms.
+        </span>
       </div>
 
       <div class="section-head"><h2>Comptes de {{ firstName }}</h2></div>
+      <p v-if="profile.aliases.length > 1" class="muted small" style="margin-top: -8px">Touche un compte pour payer dessus.</p>
       <ul class="acct-list">
-        <li v-for="a in profile.aliases" :key="a.id"><AliasCard :alias="a" /></li>
+        <li v-for="a in profile.aliases" :key="a.id"><AliasCard :alias="a" pay-label="Payer" @pay="payTo(a)" /></li>
       </ul>
     </template>
   </div>

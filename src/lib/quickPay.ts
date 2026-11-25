@@ -1,7 +1,7 @@
 import { api } from './api';
 import { copyText } from './links';
 import { openProviderApp, type OpenResult } from './openApp';
-import { getProvider } from './providers';
+import { getProvider, isPayerApp } from './providers';
 import { refreshProfile, session } from './session';
 import type { PublicAlias } from './types';
 
@@ -15,12 +15,21 @@ const APP_KEY = 'tonapp-pay-app';
 /** Mon app pour payer, ou null si je ne l'ai pas encore choisie. */
 export function preferredApp(): string | null {
   const fromProfile = session.profile?.favorite_provider;
-  if (fromProfile) return fromProfile;
+  if (isPayerApp(fromProfile)) return fromProfile!;
   try {
-    return localStorage.getItem(APP_KEY);
+    const saved = localStorage.getItem(APP_KEY);
+    // Une banque choisie avant (plus proposée pour payer) : on redemande
+    return isPayerApp(saved) ? saved : null;
   } catch {
     return null;
   }
+}
+
+/** Message après le toucher sur « Payer » (null = l'app s'est ouverte, rien à dire) */
+export function payMessage(result: OpenResult, copied: boolean, appName: string): string | null {
+  if (result === 'opened') return null;
+  if (result === 'store') return copied ? `Alias copié. Touche « Ouvrir » pour aller dans ${appName}, puis colle-le.` : `Touche « Ouvrir » pour aller dans ${appName}.`;
+  return copied ? `Alias copié. Ouvre ${appName} et colle-le.` : `Copie impossible. Ouvre ${appName} et recopie l'alias.`;
 }
 
 /** Retient l'app choisie, sans faire attendre l'ouverture. */
