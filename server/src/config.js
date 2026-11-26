@@ -38,6 +38,8 @@ export const config = {
      * whatsapp (Poolchat) · http (passerelle SMS à toi) · console (code dans les logs, pour tester)
      */
     driver: env.OTP_DRIVER || 'console',
+    /** Canaux proposés pour recevoir le code (whatsapp, sms), le premier par défaut */
+    channels: list(env.OTP_CHANNELS || 'whatsapp,sms'),
     url: env.SMS_HTTP_URL || '',
     user: env.SMS_HTTP_USER || '',
     pass: env.SMS_HTTP_PASS || '',

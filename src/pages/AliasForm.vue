@@ -20,7 +20,8 @@ import type { Alias } from '../lib/types';
  * Ajouter un compte en 2 étapes :
  * 1. Où est ce compte ? (une tuile)
  * 2. Ton alias (un seul champ : numéro ou adresse, reconnu automatiquement)
- * Le reste (nom affiché, principal, visible) est dans « Plus d'options ».
+ *    + numéro du compte (Wave, Orange Money…) et nom du compte, facultatifs
+ * Le reste (principal, visible) est dans « Plus d'options ».
  */
 const route = useRoute();
 const router = useRouter();
@@ -32,7 +33,12 @@ const existing = ref<Alias | null>(null);
 const step = ref<1 | 2>(id ? 2 : 1);
 const providerId = ref('wave');
 const aliasText = ref('');
-const label = ref('');
+/** Nom du compte (« Wave perso », « Boutique ») : utile quand on a plusieurs comptes */
+const name = ref('');
+/** Numéro auquel ce portefeuille (Wave, Orange Money…) est rattaché */
+const accountPhoneText = ref('');
+/** Privé par défaut : la personne choisit de l'afficher ou non */
+const accountPhoneVisible = ref(false);
 const primary = ref(first);
 const visible = ref(true);
 const busy = ref(false);
@@ -46,6 +52,8 @@ const otherBank = ref('');
 
 const provider = computed(() => getProvider(providerId.value));
 const isBank = computed(() => providerId.value === 'bank');
+const isWallet = computed(() => provider.value.kind === 'wallet');
+const namePlaceholder = computed(() => (isBank.value ? 'ex. Compte salaire' : `ex. ${provider.value.name} perso, Boutique`));
 const bankName = computed(() => (bank.value === OTHER_BANK ? otherBank.value.trim() : bank.value));
 const pickingBank = ref(false);
 const bankQuery = ref('');
@@ -73,7 +81,10 @@ onMounted(async () => {
   if (a) {
     providerId.value = a.provider_id;
     aliasText.value = a.alias_type === 'phone' ? formatPhone(a.value) : a.value;
-    label.value = a.label ?? '';
+    // Anciens comptes : le « nom affiché » était dans label
+    name.value = a.name ?? (a.provider_id !== 'bank' ? a.label ?? '' : '');
+    accountPhoneText.value = a.account_phone ? formatPhone(a.account_phone) : '';
+    accountPhoneVisible.value = Boolean(a.account_phone_visible);
     if (a.provider_id === 'bank' && a.label) {
       if (isKnownBank(a.label)) {
         bank.value = a.label;
@@ -98,8 +109,15 @@ async function submit() {
   if (isBank.value && !bankName.value) return (error.value = 'Choisis ta banque.');
   const parsed = parseAliasInput(aliasText.value, myCode);
   if (!parsed.ok) return (error.value = parsed.error);
-  // Pour une banque, le libellé affiché est le nom de la banque
-  const finalLabel = isBank.value ? bankName.value.slice(0, 40) : label.value.trim() || null;
+  // Numéro du compte (portefeuilles mobiles seulement), facultatif
+  let accountPhone: string | null = null;
+  if (isWallet.value && accountPhoneText.value.trim()) {
+    const p = parseAliasInput(accountPhoneText.value, myCode);
+    if (!p.ok || p.type !== 'phone') return (error.value = 'Le numéro du compte semble incorrect. Vérifie-le.');
+    accountPhone = p.value;
+  }
+  // Pour une banque, label garde le nom de la banque
+  const finalLabel = isBank.value ? bankName.value.slice(0, 40) : null;
   busy.value = true;
   error.value = null;
   try {
@@ -109,6 +127,9 @@ async function submit() {
       alias_type: parsed.type,
       value: parsed.value,
       label: finalLabel,
+      name: name.value.trim().slice(0, 40) || null,
+      account_phone: accountPhone,
+      account_phone_visible: Boolean(accountPhone) && accountPhoneVisible.value,
       is_primary: primary.value,
       visible: visible.value
     });
@@ -198,6 +219,27 @@ async function remove() {
       </button>
       <small class="muted">Tu le trouves dans l'app {{ appName }}, rubrique PI-SPI. C'est souvent ton numéro de téléphone.</small>
 
+      <!-- Numéro rattaché à ce compte Wave, Orange Money… -->
+      <template v-if="isWallet">
+        <label class="field">
+          <span>Numéro du compte {{ provider.name }} <span class="muted">(facultatif)</span></span>
+          <input v-model="accountPhoneText" inputmode="tel" autocomplete="off" placeholder="07 00 00 00 01" />
+        </label>
+        <button v-if="myPhone && !accountPhoneText" type="button" class="link-btn" @click="accountPhoneText = formatPhone(myPhone)">
+          Utiliser mon numéro {{ formatPhone(myPhone) }}
+        </button>
+        <label v-if="accountPhoneText.trim()" class="check">
+          <input v-model="accountPhoneVisible" type="checkbox" /> Afficher ce numéro sur ma page de paiement
+        </label>
+        <small v-if="accountPhoneText.trim() && !accountPhoneVisible" class="muted">Numéro privé : toi seul le vois.</small>
+      </template>
+
+      <!-- Plusieurs comptes chez le même établissement : un nom pour les reconnaître -->
+      <label class="field">
+        <span>Nom du compte <span class="muted">(facultatif)</span></span>
+        <input v-model="name" maxlength="40" :placeholder="namePlaceholder" />
+      </label>
+
       <ErrorText :message="error" />
       <button class="btn" :disabled="busy || !aliasText.trim()">{{ busy ? 'Enregistrement…' : 'Enregistrer' }}</button>
 
@@ -205,10 +247,6 @@ async function remove() {
         {{ showOptions ? "Moins d'options" : "Plus d'options" }}
       </button>
       <div v-if="showOptions" class="stack">
-        <label v-if="!isBank" class="field">
-          <span>Nom affiché <span class="muted">(facultatif)</span></span>
-          <input v-model="label" maxlength="40" placeholder="ex. Wave perso" />
-        </label>
         <label class="check"><input v-model="primary" type="checkbox" /> Compte principal (proposé en premier)</label>
         <label class="check"><input v-model="visible" type="checkbox" /> Visible sur ma page de paiement</label>
       </div>

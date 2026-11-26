@@ -37,6 +37,10 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
   return {
     mode: 'supabase',
 
+    async otpChannels() {
+      return ['sms'];
+    },
+
     // Profil privé : seulement avec le serveur Teliyaa
     async getSharing() {
       return { visibility: 'public', grants: [], links: [] };

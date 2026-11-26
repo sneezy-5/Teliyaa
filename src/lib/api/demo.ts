@@ -104,7 +104,10 @@ function requireUser(db: Db): SessionUser {
 }
 
 function toPublicAlias(a: Alias): PublicAlias {
-  return { id: a.id, provider_id: a.provider_id, alias_type: a.alias_type, value: a.value, label: a.label, is_primary: a.is_primary };
+  return {
+    id: a.id, provider_id: a.provider_id, alias_type: a.alias_type, value: a.value, label: a.label,
+    name: a.name ?? null, account_phone: a.account_phone_visible ? a.account_phone ?? null : null, is_primary: a.is_primary
+  };
 }
 
 function sortAliases<T extends { is_primary: boolean }>(list: T[]): T[] {
@@ -139,6 +142,10 @@ export const demoApi: Api = {
 
   async sendOtp() {
     await wait(400);
+  },
+
+  async otpChannels() {
+    return ['whatsapp', 'sms'];
   },
 
   async verifyPin(pin) {
@@ -273,6 +280,9 @@ export const demoApi: Api = {
       alias_type: input.alias_type,
       value: input.value,
       label: input.label,
+      name: input.name ?? null,
+      account_phone: input.account_phone ?? null,
+      account_phone_visible: Boolean(input.account_phone) && input.account_phone_visible === true,
       visible: input.visible,
       is_primary: isPrimary
     };

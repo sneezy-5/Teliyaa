@@ -14,12 +14,20 @@ import type {
   Visibility
 } from '../types';
 
+export type OtpChannel = 'whatsapp' | 'sms';
+
 export interface AliasInput {
   id?: string;
   provider_id: string;
   alias_type: Alias['alias_type'];
   value: string;
   label: string | null;
+  /** Nom du compte (« Wave perso ») */
+  name?: string | null;
+  /** Numéro du compte Wave, Orange Money… (E.164) */
+  account_phone?: string | null;
+  /** Afficher ce numéro sur la page de paiement */
+  account_phone_visible?: boolean;
   is_primary: boolean;
   visible: boolean;
 }
@@ -45,7 +53,10 @@ export interface Api {
   // Connexion
   getSessionUser(): Promise<SessionUser | null>;
   onAuthChange(cb: (user: SessionUser | null) => void): () => void;
-  sendOtp(phoneE164: string): Promise<void>;
+  /** Envoie le code par WhatsApp ou par SMS (même API côté serveur) */
+  sendOtp(phoneE164: string, channel?: OtpChannel): Promise<void>;
+  /** Moyens proposés pour recevoir le code, le premier par défaut */
+  otpChannels(): Promise<OtpChannel[]>;
   verifyOtp(phoneE164: string, code: string): Promise<SessionUser>;
   signOut(): Promise<void>;
   /** Supprime définitivement le compte, le profil et les comptes (alias). */

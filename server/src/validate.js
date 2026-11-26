@@ -59,12 +59,21 @@ export function aliasInput(body) {
   const value = typeof body.value === 'string' ? body.value.trim() : '';
   if (alias_type === 'phone' && !isUemoaPhone(value)) throw new HttpError(400, 'Ce numéro semble incomplet. Vérifie-le.');
   if (alias_type === 'address' && (value.length < 4 || value.length > 64)) throw new HttpError(400, 'Cet alias semble incorrect.');
-  const label = body.label == null || body.label === '' ? null : String(body.label).trim().slice(0, 40) || null;
+  const text40 = (v) => (v == null || v === '' ? null : String(v).trim().slice(0, 40) || null);
+  const label = text40(body.label);
+  const name = text40(body.name);
+  // Numéro auquel le compte (Wave, Orange Money…) est rattaché : facultatif
+  const rawPhone = typeof body.account_phone === 'string' ? body.account_phone.trim() : '';
+  if (rawPhone && !isUemoaPhone(rawPhone)) throw new HttpError(400, 'Le numéro du compte semble incomplet. Vérifie-le.');
   return {
     provider_id: providerId(body.provider_id),
     alias_type,
     value,
     label,
+    name,
+    account_phone: rawPhone || null,
+    // Privé par défaut : affiché seulement si la personne l'a coché
+    account_phone_visible: Boolean(rawPhone) && body.account_phone_visible === true,
     is_primary: Boolean(body.is_primary),
     visible: body.visible === undefined ? true : Boolean(body.visible)
   };

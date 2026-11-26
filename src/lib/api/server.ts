@@ -1,5 +1,5 @@
 import type { Alias, ContactMatch, Profile, PublicProfile, SessionUser, ShareLink, Sharing } from '../types';
-import type { Api } from './types';
+import type { Api, OtpChannel } from './types';
 
 /**
  * Client de TON serveur (dossier server/). Le jeton de session est gardé sur le téléphone.
@@ -79,8 +79,18 @@ export function createServerApi(baseUrl: string): Api {
       return () => listeners.delete(cb);
     },
 
-    async sendOtp(phone) {
-      await call('POST', '/api/auth/code', { phone });
+    async sendOtp(phone, channel) {
+      await call('POST', '/api/auth/code', { phone, channel });
+    },
+
+    async otpChannels() {
+      try {
+        const { channels } = await call<{ channels: OtpChannel[] }>('GET', '/api/auth/channels');
+        return channels.length ? channels : ['whatsapp'];
+      } catch {
+        // Ancien serveur ou pas de réseau : WhatsApp seulement
+        return ['whatsapp'];
+      }
     },
 
     async verifyOtp(phone, code) {

@@ -24,7 +24,8 @@ Seul service extérieur : l'envoi du code de connexion par **WhatsApp** (Poolcha
 
 | Route | Rôle |
 | --- | --- |
-| `POST /api/auth/code` · `POST /api/auth/verify` · `POST /api/auth/logout` | Connexion par code WhatsApp (6 chiffres, 5 min, 5 essais) |
+| `POST /api/auth/code` · `POST /api/auth/verify` · `POST /api/auth/logout` | Connexion par code WhatsApp **ou SMS** (`channel: "whatsapp" \| "sms"`, 6 chiffres, 5 min, 5 essais) |
+| `GET /api/auth/channels` | Moyens proposés pour recevoir le code (`OTP_CHANNELS`) |
 | `GET /api/me` · `PUT /api/me/profile` · `GET /api/usernames/:pseudo` | Mon compte, mon profil, pseudo libre ? |
 | `GET/POST /api/me/aliases` · `PUT/DELETE /api/me/aliases/:id` | Mes comptes (alias) |
 | `GET /api/profiles/:pseudo` | Page publique (sans compte) |

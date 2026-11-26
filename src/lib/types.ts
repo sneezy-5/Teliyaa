@@ -48,7 +48,14 @@ export interface Alias {
   provider_id: string;
   alias_type: AliasType;
   value: string;
+  /** Banque : nom de la banque */
   label: string | null;
+  /** Nom du compte choisi par la personne (« Wave perso », « Boutique ») */
+  name?: string | null;
+  /** Numéro auquel ce compte (Wave, Orange Money…) est rattaché, en E.164 */
+  account_phone?: string | null;
+  /** Numéro du compte affiché sur la page de paiement (privé par défaut) */
+  account_phone_visible?: boolean;
   is_primary: boolean;
   /** Affiché sur la page publique */
   visible: boolean;
@@ -102,6 +109,8 @@ export interface PublicAlias {
   alias_type: AliasType;
   value: string;
   label: string | null;
+  name?: string | null;
+  account_phone?: string | null;
   is_primary: boolean;
 }
 

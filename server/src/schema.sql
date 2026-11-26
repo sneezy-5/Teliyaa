@@ -156,6 +156,25 @@ create table if not exists profile_links (
 );
 create index if not exists profile_links_owner_idx on profile_links (owner_id);
 
+-- ---------- Nom et numéro de chaque compte ----------
+-- Une personne peut avoir plusieurs Wave, Orange Money… : chaque compte a son nom (« Wave perso », « Boutique »)
+-- et, pour un portefeuille mobile, le numéro auquel il est rattaché.
+-- `label` garde le nom de la banque pour les comptes bancaires.
+alter table aliases add column if not exists name text;
+alter table aliases add column if not exists account_phone text;
+-- Le numéro du compte reste privé tant que la personne ne choisit pas de l'afficher
+alter table aliases add column if not exists account_phone_visible boolean not null default false;
+do $$ begin
+  alter table aliases add constraint aliases_name_check check (name is null or char_length(name) <= 40);
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  alter table aliases add constraint aliases_account_phone_check check (account_phone is null or account_phone ~ '^\+[0-9]{8,15}$');
+exception when duplicate_object then null;
+end $$;
+-- Ancien « nom affiché » d'un compte non bancaire → devient son nom (une seule fois)
+update aliases set name = label, label = null where provider_id <> 'bank' and label is not null and name is null;
+
 -- Compteur anti-abus de la recherche de contacts
 create table if not exists contact_lookups (
   id bigint generated always as identity primary key,

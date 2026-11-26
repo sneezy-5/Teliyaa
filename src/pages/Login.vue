@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ErrorText from '../components/ErrorText.vue';
 import Icon from '../components/Icon.vue';
 import { api } from '../lib/api';
 import { DEMO_OTP } from '../lib/api/demo';
+import type { OtpChannel } from '../lib/api/types';
 import { COUNTRIES, formatPhone, toE164 } from '../lib/format';
 import { session, signedIn } from '../lib/session';
 
-/** Connexion = création de compte : numéro, puis code reçu par WhatsApp (SMS en mode démo). */
-const channel = import.meta.env.VITE_OTP_CHANNEL === 'sms' || api.mode !== 'server' ? 'SMS' : 'WhatsApp';
+/** Connexion = création de compte : numéro, puis code reçu par WhatsApp ou par SMS (au choix). */
+const CHANNEL_NAMES: Record<OtpChannel, string> = { whatsapp: 'WhatsApp', sms: 'SMS' };
+const channels = ref<OtpChannel[]>(['whatsapp']);
+/** Canal utilisé pour le dernier code envoyé */
+const channel = ref<OtpChannel>('whatsapp');
+const otherChannel = computed(() => channels.value.find((c) => c !== channel.value) ?? null);
+onMounted(async () => {
+  channels.value = await api.otpChannels();
+  channel.value = channels.value[0];
+});
 
 const route = useRoute();
 const router = useRouter();
@@ -23,19 +32,26 @@ const code = ref('');
 const busy = ref(false);
 const error = ref<string | null>(null);
 
-async function send() {
-  const e164 = toE164(country.value, local.value);
+async function send(via: OtpChannel = channel.value) {
+  const e164 = phone.value ?? toE164(country.value, local.value);
   if (!e164) return (error.value = `Le numéro doit avoir ${current.value.digits} chiffres.`);
   busy.value = true;
   error.value = null;
   try {
-    await api.sendOtp(e164);
+    await api.sendOtp(e164, via);
+    channel.value = via;
+    code.value = '';
     phone.value = e164;
   } catch (e) {
     error.value = (e as Error).message;
   } finally {
     busy.value = false;
   }
+}
+
+/** Recevoir le code par l'autre moyen (SMS si WhatsApp n'arrive pas, et inversement) */
+function sendOther() {
+  if (otherChannel.value) void send(otherChannel.value);
 }
 
 async function verify() {
@@ -73,7 +89,7 @@ function changeNumber() {
     <form class="auth-form" @submit.prevent="verify">
       <h1>Entre le code</h1>
       <p class="muted">
-        Envoyé par {{ channel }} au <strong class="nowrap">{{ formatPhone(phone) }}</strong>
+        Envoyé par {{ CHANNEL_NAMES[channel] }} au <strong class="nowrap">{{ formatPhone(phone) }}</strong>
       </p>
       <input
         class="auth-otp"
@@ -89,6 +105,9 @@ function changeNumber() {
       <p v-if="api.mode === 'demo'" class="muted small">Démo : {{ DEMO_OTP }}</p>
       <ErrorText :message="error" />
       <button class="btn" :disabled="busy || code.length < 6">{{ busy ? 'Vérification…' : 'Valider' }}</button>
+      <button v-if="otherChannel" type="button" class="link-btn center" :disabled="busy" @click="sendOther">
+        Pas reçu ? Recevoir le code par {{ CHANNEL_NAMES[otherChannel] }}
+      </button>
       <button type="button" class="link-btn center" @click="changeNumber">Changer de numéro</button>
     </form>
   </main>
@@ -96,9 +115,9 @@ function changeNumber() {
   <!-- Étape 1 : le numéro -->
   <main v-else class="page auth">
     <RouterLink to="/" class="icon-btn auth-back" aria-label="Retour"><Icon name="back" :size="24" /></RouterLink>
-    <form class="auth-form" @submit.prevent="send">
+    <form class="auth-form" @submit.prevent="send()">
       <h1>Ton numéro</h1>
-      <p class="muted">On t'envoie un code par {{ channel }}.</p>
+      <p class="muted">On t'envoie un code par {{ CHANNEL_NAMES[channel] }}.</p>
 
       <div class="phone-field">
         <!-- Le menu natif est invisible par-dessus : on n'affiche que le drapeau et l'indicatif -->
@@ -113,7 +132,10 @@ function changeNumber() {
       </div>
 
       <ErrorText :message="error" />
-      <button class="btn" :disabled="busy || !local.trim()">{{ busy ? 'Envoi…' : 'Recevoir le code' }}</button>
+      <button class="btn" :disabled="busy || !local.trim()">{{ busy ? 'Envoi…' : `Recevoir le code par ${CHANNEL_NAMES[channel]}` }}</button>
+      <button v-if="otherChannel" type="button" class="link-btn center" :disabled="busy || !local.trim()" @click="sendOther">
+        Plutôt par {{ CHANNEL_NAMES[otherChannel] }}
+      </button>
     </form>
   </main>
 </template>

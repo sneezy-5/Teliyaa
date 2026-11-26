@@ -13,7 +13,7 @@ import Icon from './Icon.vue';
  * - le bouton « copier » reste toujours utilisable, même quand la carte est un lien
  */
 const props = defineProps<{
-  alias: PublicAlias & { visible?: boolean };
+  alias: PublicAlias & { visible?: boolean; account_phone_visible?: boolean };
   to?: string;
   /** Texte d'action (ex. « Payer ») : toute la carte devient un bouton qui émet `pay` */
   payLabel?: string;
@@ -24,11 +24,17 @@ const provider = computed(() => getProvider(props.alias.provider_id));
 const title = computed(() => aliasDisplayName(props.alias));
 /** Pour une banque, on rappelle le type sous le nom de la banque */
 const subtitle = computed(() => {
-  if (props.alias.provider_id === 'bank') return 'Banque';
-  if (props.alias.label?.trim()) return provider.value.name;
+  const named = Boolean(props.alias.name?.trim());
+  if (props.alias.provider_id === 'bank') return named && props.alias.label?.trim() ? props.alias.label : 'Banque';
+  if (named) return provider.value.name;
   return props.alias.alias_type === 'phone' ? 'Numéro' : 'Alias';
 });
 const value = computed(() => (props.alias.alias_type === 'phone' ? formatPhone(props.alias.value) : props.alias.value));
+/** Numéro du compte, seulement s'il n'est pas déjà l'alias affiché */
+const accountPhone = computed(() => {
+  const p = props.alias.account_phone;
+  return p && p !== props.alias.value ? formatPhone(p) : null;
+});
 const style = computed(() => ({
   '--c1': provider.value.card[0],
   '--c2': provider.value.card[1],
@@ -58,7 +64,7 @@ async function copy() {
       </span>
       <span class="grow">
         <strong class="acct-name">{{ title }}</strong>
-        <span class="acct-sub">{{ subtitle }}</span>
+        <span class="acct-sub">{{ subtitle }}<template v-if="accountPhone"> · {{ accountPhone }}<template v-if="alias.account_phone_visible === false"> (privé)</template></template></span>
       </span>
       <span v-if="alias.is_primary" class="acct-tag">Principal</span>
       <span v-if="alias.visible === false" class="acct-tag">Masqué</span>

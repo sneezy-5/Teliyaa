@@ -35,7 +35,7 @@ async function refuseIfBlocked(phone) {
   if (rows[0]) throw new HttpError(403, BLOCKED_MESSAGE);
 }
 
-export async function requestCode(phone, ip) {
+export async function requestCode(phone, ip, channel) {
   await refuseIfBlocked(phone);
   if (isReview(phone)) return;
   // Limites par numéro : 3 codes / 15 min, 10 / jour
@@ -59,7 +59,7 @@ export async function requestCode(phone, ip) {
   await pool.query(`insert into otp_sends (phone, ip) values ($1, $2)`, [phone, ip]);
 
   try {
-    await sendCode(phone, code);
+    await sendCode(phone, code, channel);
   } catch (e) {
     console.error('Envoi du code impossible :', e.message);
     await pool.query(`delete from otp_codes where phone = $1`, [phone]);

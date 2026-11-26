@@ -81,6 +81,7 @@ export function getProvider(id: string | null | undefined): Provider {
   return PROVIDERS.find((p) => p.id === id) ?? PROVIDERS[PROVIDERS.length - 1];
 }
 
-export function aliasDisplayName(alias: { provider_id: string; label: string | null }): string {
-  return alias.label?.trim() || getProvider(alias.provider_id).name;
+/** Titre d'un compte : son nom choisi, sinon la banque, sinon l'établissement */
+export function aliasDisplayName(alias: { provider_id: string; label: string | null; name?: string | null }): string {
+  return alias.name?.trim() || alias.label?.trim() || getProvider(alias.provider_id).name;
 }

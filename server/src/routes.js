@@ -5,6 +5,7 @@ import { pool, tx } from './db.js';
 import { HttpError, rateLimiter } from './http.js';
 import { resetPin, setPin, verifyPin } from './pin.js';
 import { sharingRoutes, viewerId, visibleTo } from './sharing.js';
+import { otpChannels, pickChannel } from './sms.js';
 import { aliasInput, normalizeUsername, optionalBool, providerId, requirePhone, usernameError } from './validate.js';
 
 /**
@@ -15,8 +16,10 @@ import { aliasInput, normalizeUsername, optionalBool, providerId, requirePhone, 
  */
 
 const PROFILE_COLS = 'id, username, full_name, phone, verified, discoverable, findable_by_phone, favorite_provider, visibility';
-const ALIAS_COLS = 'id, owner_id, provider_id, alias_type, value, label, is_primary, visible, created_at';
-const PUBLIC_ALIAS_COLS = 'id, owner_id, provider_id, alias_type, value, label, is_primary';
+const ALIAS_COLS = 'id, owner_id, provider_id, alias_type, value, label, name, account_phone, account_phone_visible, is_primary, visible, created_at';
+// Numéro du compte : seulement si son propriétaire a choisi de l'afficher
+const PUBLIC_ALIAS_COLS =
+  'id, owner_id, provider_id, alias_type, value, label, name, case when account_phone_visible then account_phone end as account_phone, is_primary';
 
 const LOOKUP_BATCH = 500;
 const LOOKUP_DAILY = 10_000;
@@ -69,9 +72,19 @@ export const routes = [
       const { body, ip } = ctx;
       codeByIp(`code:${ip}`);
       const phone = requirePhone(body.phone);
-      await track(ctx, 'otp_request', { target: phone });
-      await requestCode(phone, ip);
-      return { ok: true };
+      const channel = pickChannel(body.channel);
+      if (!channel) throw new HttpError(400, 'Ce moyen de recevoir le code n’est pas disponible.');
+      await track(ctx, 'otp_request', { target: phone, meta: { channel } });
+      await requestCode(phone, ip, channel);
+      return { ok: true, channel };
+    }
+  },
+  {
+    // Moyens proposés pour recevoir le code (WhatsApp, SMS)
+    method: 'GET',
+    path: '/api/auth/channels',
+    async handler() {
+      return { channels: otpChannels };
     }
   },
   {
@@ -252,13 +265,13 @@ export const routes = [
           const primary = a.is_primary || count === 0; // le premier compte est le principal
           if (primary) await db.query(`update aliases set is_primary = false where owner_id = $1`, [user.id]);
           const { rows } = await db.query(
-            `insert into aliases (owner_id, provider_id, alias_type, value, label, is_primary, visible)
-             values ($1, $2, $3, $4, $5, $6, $7) returning ${ALIAS_COLS}`,
-            [user.id, a.provider_id, a.alias_type, a.value, a.label, primary, a.visible]
+            `insert into aliases (owner_id, provider_id, alias_type, value, label, name, account_phone, account_phone_visible, is_primary, visible)
+             values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning ${ALIAS_COLS}`,
+            [user.id, a.provider_id, a.alias_type, a.value, a.label, a.name, a.account_phone, a.account_phone_visible, primary, a.visible]
           );
           return rows[0];
         });
-        await track(ctx, 'alias_add', { target: a.provider_id, meta: { value: a.value, label: a.label } });
+        await track(ctx, 'alias_add', { target: a.provider_id, meta: { value: a.value, label: a.label, name: a.name, account_phone: a.account_phone } });
         return row;
       } catch (e) {
         uniqueViolation(e, 'Tu as déjà enregistré cet alias.');
@@ -280,13 +293,14 @@ export const routes = [
           const primary = a.is_primary || existing.is_primary;
           if (a.is_primary) await db.query(`update aliases set is_primary = false where owner_id = $1 and id <> $2`, [user.id, params.id]);
           const { rows } = await db.query(
-            `update aliases set provider_id = $3, alias_type = $4, value = $5, label = $6, is_primary = $7, visible = $8
+            `update aliases set provider_id = $3, alias_type = $4, value = $5, label = $6, is_primary = $7, visible = $8,
+                    name = $9, account_phone = $10, account_phone_visible = $11
               where id = $1 and owner_id = $2 returning ${ALIAS_COLS}`,
-            [params.id, user.id, a.provider_id, a.alias_type, a.value, a.label, primary, a.visible]
+            [params.id, user.id, a.provider_id, a.alias_type, a.value, a.label, primary, a.visible, a.name, a.account_phone, a.account_phone_visible]
           );
           return rows[0];
         });
-        await track(ctx, 'alias_update', { target: a.provider_id, meta: { value: a.value, label: a.label } });
+        await track(ctx, 'alias_update', { target: a.provider_id, meta: { value: a.value, label: a.label, name: a.name, account_phone: a.account_phone } });
         return row;
       } catch (e) {
         uniqueViolation(e, 'Tu as déjà enregistré cet alias.');

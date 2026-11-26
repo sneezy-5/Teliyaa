@@ -103,7 +103,7 @@ export const adminRoutes = [
       ).rows[0];
       if (!user) throw new HttpError(404, 'Utilisateur introuvable.');
       const [aliases, sessions, events, suspects] = await Promise.all([
-        pool.query(`select provider_id, alias_type, value, label, is_primary, visible, created_at from aliases where owner_id = $1 order by created_at`, [params.id]),
+        pool.query(`select provider_id, alias_type, value, label, name, account_phone, account_phone_visible, is_primary, visible, created_at from aliases where owner_id = $1 order by created_at`, [params.id]),
         pool.query(
           `select created_at, last_seen_at, last_ip, device, pin_ok, expires_at from sessions where user_id = $1 order by last_seen_at desc nulls last`,
           [params.id]
