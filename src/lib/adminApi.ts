@@ -40,7 +40,10 @@ export interface Overview {
   providers: Count[];
   devices: Count[];
   events24h: Count[];
-  days: { day: string; signups: number; active: number }[];
+  days: { day: string; signups: number; active: number; visits?: number }[];
+  /** Vitrine teliyaa.com (absent sur un ancien serveur) */
+  site?: { visits_today: number; visits_7d: number; visitors_7d: number; cta_7d: number };
+  sources?: Count[];
 }
 
 export interface AdminUserRow {
@@ -113,6 +116,8 @@ export const adminApi = {
 /** Libellés lisibles des événements */
 export const EVENT_LABELS: Record<string, string> = {
   visit: 'Visite',
+  site_visit: 'Visite de la vitrine',
+  site_cta: 'Clic « Créer mon compte »',
   signup: 'Inscription',
   login: 'Connexion',
   otp_request: 'Code WhatsApp demandé',

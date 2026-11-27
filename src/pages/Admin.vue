@@ -170,6 +170,14 @@ onMounted(async () => {
         <div class="adm-tiles">
           <div class="adm-tile"><span>Inscrits</span><strong>{{ overview.users.total }}</strong><small>+{{ overview.users.new_today }} aujourd'hui · +{{ overview.users.new_7d }} sur 7 j</small></div>
           <div class="adm-tile"><span>Actifs 24 h</span><strong>{{ overview.users.active_24h }}</strong><small>{{ overview.users.active_7d }} sur 7 j · {{ overview.users.active_30d }} sur 30 j</small></div>
+          <div v-if="overview.site" class="adm-tile">
+            <span>Visites de la vitrine</span><strong>{{ overview.site.visits_7d }}</strong>
+            <small>
+              sur 7 j · {{ overview.site.visitors_7d }} visiteur(s) · {{ overview.site.visits_today }} aujourd'hui ·
+              {{ overview.site.cta_7d }} clic(s) « Créer mon compte »
+              <template v-if="overview.site.visitors_7d"> ({{ Math.round((overview.site.cta_7d / overview.site.visitors_7d) * 100) }} %)</template>
+            </small>
+          </div>
           <div class="adm-tile"><span>Comptes ajoutés</span><strong>{{ overview.content.aliases }}</strong><small>{{ overview.content.profiles }} profils créés</small></div>
           <button type="button" class="adm-tile warn" @click="tab = 'suspects'">
             <span>Suspects à voir</span><strong>{{ overview.content.open_suspects }}</strong><small>{{ overview.users.blocked }} compte(s) bloqué(s)</small>
@@ -193,6 +201,17 @@ onMounted(async () => {
         </div>
 
         <div class="adm-grid">
+          <div v-if="overview.sources" class="adm-card">
+            <h2>D'où viennent les visiteurs (7 j)</h2>
+            <p v-if="!overview.sources.length" class="muted small">Pas encore de visite. Partage teliyaa.com/?src=linkedin pour suivre une source.</p>
+            <div v-for="s in overview.sources" :key="s.key" class="adm-hbar">
+              <span>{{ s.key }}</span><i :style="{ width: share(s.n, overview.sources) }" /><b>{{ s.n }}</b>
+            </div>
+            <p v-if="overview.days.some((d) => d.visits)" class="muted small" style="margin-top: 8px">
+              Par jour :
+              <template v-for="(d, i) in overview.days.slice(-7)" :key="d.day">{{ i ? ' · ' : '' }}{{ new Date(d.day).getDate() }} → {{ d.visits ?? 0 }}</template>
+            </p>
+          </div>
           <div class="adm-card">
             <h2>Appareils (30 j)</h2>
             <p v-if="!overview.devices.length" class="muted small">Pas encore de données.</p>

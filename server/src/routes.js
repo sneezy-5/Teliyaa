@@ -1,5 +1,5 @@
 import { adminRoutes } from './admin.js';
-import { track } from './audit.js';
+import { sourceOf, track } from './audit.js';
 import { logout, requestCode, verifyCode } from './auth.js';
 import { config } from './config.js';
 import { pool, tx } from './db.js';
@@ -66,6 +66,21 @@ async function requireProfile(userId) {
 }
 
 export const routes = [
+  // ---------- Compteur de visites de la vitrine (sans cookie) ----------
+  {
+    // { kind: 'visit' | 'cta', src: '?src=…', ref: document.referrer }
+    method: 'POST',
+    path: '/api/hit',
+    async handler(ctx) {
+      publicByIp(`hit:${ctx.ip}`);
+      // Robots et aperçus de liens (WhatsApp, LinkedIn…) : pas des visiteurs
+      if (!ctx.ua || /bot|spider|crawl|preview|facebookexternalhit|whatsapp|linkedinbot|headless/i.test(ctx.ua)) return { ok: true };
+      const type = ctx.body.kind === 'cta' ? 'site_cta' : 'site_visit';
+      await track(ctx, type, { target: sourceOf(ctx.body.src, ctx.body.ref, 'teliyaa.com'), userId: null });
+      return { ok: true };
+    }
+  },
+
   // ---------- Connexion ----------
   {
     method: 'POST',

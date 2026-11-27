@@ -45,14 +45,26 @@ export const adminRoutes = [
       const events24h = await all(`
         select type as key, count(*)::int as n from events
          where created_at > now() - interval '24 hours' group by 1 order by 2 desc`);
-      // 14 derniers jours : inscriptions et personnes actives
+      // 14 derniers jours : inscriptions, personnes actives, visites de la vitrine
       const days = await all(`
         select d::date as day,
                (select count(*) from users where created_at::date = d::date)::int as signups,
-               (select count(distinct user_id) from events where user_id is not null and created_at::date = d::date)::int as active
+               (select count(distinct user_id) from events where user_id is not null and created_at::date = d::date)::int as active,
+               (select count(*) from events where type = 'site_visit' and created_at::date = d::date)::int as visits
           from generate_series(current_date - 13, current_date, interval '1 day') d
          order by d`);
-      return { users, content, providers, devices, events24h, days };
+      // Vitrine teliyaa.com (visiteurs uniques ≈ adresses IP différentes)
+      const site = await one(`
+        select count(*) filter (where type = 'site_visit' and created_at >= current_date)::int as visits_today,
+               count(*) filter (where type = 'site_visit')::int as visits_7d,
+               count(distinct ip) filter (where type = 'site_visit')::int as visitors_7d,
+               count(*) filter (where type = 'site_cta')::int as cta_7d
+          from events where type in ('site_visit', 'site_cta') and created_at > now() - interval '7 days'`);
+      const sources = await all(`
+        select coalesce(target, 'direct') as key, count(*)::int as n from events
+         where type = 'site_visit' and created_at > now() - interval '7 days'
+         group by 1 order by 2 desc limit 10`);
+      return { users, content, providers, devices, events24h, days, site, sources };
     }
   },
 

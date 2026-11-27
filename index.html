@@ -529,6 +529,31 @@
       })();
     </script>
 
+    <script>
+      // Compteur de visites de la vitrine (sans cookie) : une visite à l'ouverture, un clic sur « Créer mon compte ».
+      // Source : ?src=linkedin dans le lien partagé, sinon la page d'où vient le visiteur.
+      (function () {
+        if (document.documentElement.className.indexOf('in-app') !== -1) return;
+        var q = new URLSearchParams(location.search);
+        var src = q.get('src') || q.get('utm_source') || '';
+        var ref = document.referrer || '';
+        function hit(kind) {
+          try {
+            var body = JSON.stringify({ kind: kind, src: src, ref: ref });
+            if (!(navigator.sendBeacon && navigator.sendBeacon('/api/hit', body))) {
+              fetch('/api/hit', { method: 'POST', body: body, keepalive: true }).catch(function () {});
+            }
+          } catch (e) {}
+        }
+        hit('visit');
+        document.querySelectorAll('#vitrine a.v-btn.primary, #vitrine a.v-btn.light').forEach(function (a) {
+          a.addEventListener('click', function () {
+            hit('cta');
+          });
+        });
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -42,6 +42,35 @@ export function deviceOf(ua) {
 }
 
 /**
+ * D'où vient un visiteur de la vitrine : « ?src=linkedin » dans le lien en priorité,
+ * sinon la page précédente (referrer), sinon « direct ».
+ * Astuce : WhatsApp et beaucoup d'apps n'envoient pas de referrer → partager teliyaa.com/?src=whatsapp
+ */
+const REFERRERS = [
+  [/(^|\.)linkedin\.com$|^lnkd\.in$/, 'linkedin'],
+  [/(^|\.)facebook\.com$|^fb\.me$|(^|\.)fb\.com$/, 'facebook'],
+  [/(^|\.)instagram\.com$/, 'instagram'],
+  [/(^|\.)whatsapp\.com$|^wa\.me$/, 'whatsapp'],
+  [/(^|\.)tiktok\.com$/, 'tiktok'],
+  [/(^|\.)(twitter|x)\.com$|^t\.co$/, 'x'],
+  [/(^|\.)google\.[a-z.]+$/, 'google'],
+  [/(^|\.)bing\.com$/, 'bing']
+];
+export function sourceOf(src, referrer, ownHost = '') {
+  const s = String(src ?? '').trim().toLowerCase();
+  if (/^[a-z0-9_-]{1,30}$/.test(s)) return s;
+  let host = '';
+  try {
+    host = new URL(String(referrer ?? '')).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return 'direct';
+  }
+  if (!host || (ownHost && host === ownHost.replace(/^www\./, ''))) return 'direct';
+  for (const [re, name] of REFERRERS) if (re.test(host)) return name;
+  return host.slice(0, 60);
+}
+
+/**
  * Note un événement. N'échoue jamais (un problème de journal ne doit pas bloquer l'utilisateur).
  * @param ctx { user, ip, ua } de la requête
  */
