@@ -6,6 +6,7 @@ import { aliasDisplayName, getProvider, logoUrl } from '../lib/providers';
 import { toast } from '../lib/toast';
 import type { PublicAlias } from '../lib/types';
 import Icon from './Icon.vue';
+import ProviderBadge from './ProviderBadge.vue';
 
 /**
  * Un compte présenté comme une carte de paiement : couleur de l'établissement, nom, alias en grand.
@@ -17,8 +18,12 @@ const props = defineProps<{
   to?: string;
   /** Texte d'action (ex. « Payer ») : toute la carte devient un bouton qui émet `pay` */
   payLabel?: string;
+  /** Apps proposées sous le compte (Wave, Orange Money…) : un toucher émet `payWith` avec l'app choisie */
+  apps?: { id: string; name: string }[];
+  /** App habituelle du payeur, mise en avant dans la rangée */
+  highlightApp?: string | null;
 }>();
-const emit = defineEmits<{ pay: [] }>();
+const emit = defineEmits<{ pay: []; payWith: [providerId: string] }>();
 
 const provider = computed(() => getProvider(props.alias.provider_id));
 const title = computed(() => aliasDisplayName(props.alias));
@@ -74,6 +79,20 @@ async function copy() {
       <span v-if="payLabel" class="acct-pay" aria-hidden="true">{{ payLabel }} <Icon name="open" :size="14" /></span>
       <button type="button" class="acct-copy" :aria-label="`Copier l'alias ${title}`" @click="copy">
         <Icon name="copy" :size="18" />
+      </button>
+    </div>
+    <!-- Payer ce compte : on touche l'app avec laquelle on veut payer -->
+    <div v-if="apps?.length" class="acct-apps" role="group" :aria-label="`Payer ${title} avec`">
+      <button
+        v-for="p in apps"
+        :key="p.id"
+        type="button"
+        :class="['acct-app', { on: p.id === highlightApp }]"
+        :aria-label="`Ouvrir ${p.name} pour payer ${title}`"
+        @click="emit('payWith', p.id)"
+      >
+        <ProviderBadge :provider-id="p.id" />
+        <span>{{ p.name }}</span>
       </button>
     </div>
     <!-- Lien ou bouton étiré sur toute la carte (le bouton copier passe au-dessus) -->

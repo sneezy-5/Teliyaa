@@ -10,10 +10,9 @@ import type { PublicAlias, PublicProfile } from '../lib/types';
 import AliasCard from './AliasCard.vue';
 import ErrorText from './ErrorText.vue';
 import Icon from './Icon.vue';
-import ProviderBadge from './ProviderBadge.vue';
 
 /**
- * Payer en un geste : un toucher sur « Payer avec Wave » copie l'alias du destinataire et ouvre l'app.
+ * Payer en un geste : sous chaque compte, les apps (Wave, Orange Money…). Un toucher copie l'alias de ce compte et ouvre l'app.
  * Au retour, on demande « Tu as payé ? » pour prévenir le destinataire.
  */
 const props = defineProps<{
@@ -31,8 +30,8 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ declared: [] }>();
 
+/** App habituelle du payeur : mise en avant sur chaque compte */
 const myApp = ref<string | null>(isPayerApp(props.favoriteProvider) ? props.favoriteProvider! : preferredApp());
-const choosing = ref(false);
 const usedProvider = ref<string | null>(props.sentWith ?? null);
 const usedAlias = ref<PublicAlias | null>(props.sentWith ? aliasFor(props.profile.aliases, props.sentWith) : null);
 // « Tu as payé ? » seulement si les déclarations de paiement sont activées (désactivées en v1)
@@ -43,40 +42,20 @@ const busy = ref(false);
 const done = ref(false);
 const error = ref<string | null>(null);
 
-// Payer avec : Wave, Orange Money, MTN MoMo, Moov Money (pas « la banque » pour l'instant)
-const apps = PAYER_APPS;
 const firstName = computed(() => props.profile.full_name.split(' ')[0]);
 const showValue = (a: PublicAlias) => (a.alias_type === 'phone' ? formatPhone(a.value) : a.value);
 
-/** Compte choisi à la main dans la liste (sinon on prend le plus adapté à mon app) */
-const pickedAlias = ref<PublicAlias | null>(null);
-
 /**
- * Toucher une carte = payer sur ce compte :
- * - compte Wave, Orange Money, MTN, Moov : on copie l'alias et on ouvre CETTE app ;
- * - compte bancaire : avec mon app (choisie une fois, la grille s'affiche sinon).
+ * Les apps proposées sous chaque compte, toujours dans le même ordre (Wave, Orange Money, MTN, Moov).
+ * PI-SPI relie les opérateurs : on peut payer un compte Wave depuis Orange Money.
  */
-function payTo(alias: PublicAlias) {
-  pickedAlias.value = alias;
-  if (isPayerApp(alias.provider_id)) return payWith(alias.provider_id, false);
-  if (myApp.value) return payWith(myApp.value);
-  choosing.value = true;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+const apps = PAYER_APPS;
 
-/** Ouvre l'app sur cette carte : « Ouvrir Wave », etc. ; banque : « Payer » */
-const payLabelFor = (a: PublicAlias) => (isPayerApp(a.provider_id) ? `Ouvrir ${getProvider(a.provider_id).name}` : 'Payer');
-
-/** `remember` : retenir cette app comme « mon app » (choix fait dans la grille) */
-async function payWith(providerId: string, remember = true) {
-  const alias = pickedAlias.value ?? aliasFor(props.profile.aliases, providerId);
-  pickedAlias.value = null;
+/** Toucher une app sous un compte : l'alias de CE compte est copié et CETTE app s'ouvre */
+async function payWith(providerId: string, alias: PublicAlias | null = usedAlias.value ?? aliasFor(props.profile.aliases, providerId)) {
   if (!alias) return;
-  if (remember) {
-    rememberApp(providerId);
-    myApp.value = providerId;
-  }
-  choosing.value = false;
+  rememberApp(providerId);
+  myApp.value = providerId;
   usedProvider.value = providerId;
   usedAlias.value = alias;
   awaiting.value = FEATURES.paymentDeclarations;
@@ -149,19 +128,6 @@ async function declare() {
         <button type="button" class="btn ghost" @click="awaiting = false">Pas encore</button>
       </div>
 
-      <!-- Compte bancaire touché sans app connue : je choisis mon app (retenue ensuite) -->
-      <div v-else-if="choosing" class="card stack">
-        <h2>Payer avec quelle app ?</h2>
-        <p v-if="pickedAlias" class="muted small">Vers {{ aliasDisplayName(pickedAlias) }} · {{ showValue(pickedAlias) }}</p>
-        <div class="app-grid">
-          <button v-for="p in apps" :key="p.id" type="button" class="app-tile" @click="payWith(p.id)">
-            <ProviderBadge :provider-id="p.id" />
-            <span>{{ p.name }}</span>
-          </button>
-        </div>
-        <button type="button" class="link-btn center" @click="(choosing = false), (pickedAlias = null)">Annuler</button>
-      </div>
-
       <div class="note warn">
         <Icon name="alert" />
         <span>
@@ -171,9 +137,11 @@ async function declare() {
       </div>
 
       <div class="section-head"><h2>Comptes de {{ firstName }}</h2></div>
-      <p class="muted small" style="margin-top: -8px">Choisis un compte : son alias est copié et l'app s'ouvre. Il ne reste qu'à coller et valider.</p>
+      <p class="muted small" style="margin-top: -8px">Sous le compte choisi, touche ton app : l'alias est copié et l'app s'ouvre. Il ne reste qu'à coller et valider.</p>
       <ul class="acct-list">
-        <li v-for="a in profile.aliases" :key="a.id"><AliasCard :alias="a" :pay-label="payLabelFor(a)" @pay="payTo(a)" /></li>
+        <li v-for="a in profile.aliases" :key="a.id">
+          <AliasCard :alias="a" :apps="apps" :highlight-app="myApp" @pay-with="(id) => payWith(id, a)" />
+        </li>
       </ul>
     </template>
   </div>

@@ -29,12 +29,8 @@ import {
   requestContactsPermission,
   type ContactsPermission
 } from '../lib/nativeContacts';
-import { useRouter } from 'vue-router';
-import { FEATURES } from '../lib/features';
 import { getProvider } from '../lib/providers';
-import { aliasFor, payMessage, preferredApp, quickPay } from '../lib/quickPay';
 import { session } from '../lib/session';
-import { toast } from '../lib/toast';
 
 /**
  * L'annuaire, comme WhatsApp.
@@ -82,24 +78,6 @@ const onApp = computed(() => visible.value.filter((c) => c.match));
 const toInvite = computed(() => visible.value.filter((c) => !c.match));
 const invitesShown = computed(() => (showAllInvites.value || filter.value ? toInvite.value : toInvite.value.slice(0, INVITES_SHOWN)));
 const myLink = computed(() => (session.profile ? profileLink(session.profile.username) : ''));
-
-const router = useRouter();
-
-/**
- * Un toucher = l'alias est copié et mon app s'ouvre aussitôt.
- * Si je n'ai pas encore choisi mon app, la page d'envoi me la demande (une seule fois).
- */
-async function send(c: SavedContact) {
-  const m = c.match!;
-  const app = preferredApp();
-  const alias = app ? aliasFor(m.aliases, app) : null;
-  if (!app || !alias) return router.push(`/send/${m.username}`);
-  const { result, copied } = await quickPay(alias, app);
-  // Au retour de l'app, la page demande « Tu as payé ? » (si activé ; en v1 on reste sur la liste)
-  if (FEATURES.paymentDeclarations) await router.push({ path: `/send/${m.username}`, query: { sent: app } });
-  const message = payMessage(result, copied, getProvider(app).name);
-  if (message) toast(message);
-}
 
 function save(list: SavedContact[]) {
   contacts.value = list;
@@ -242,7 +220,7 @@ function clearAll() {
       <div class="section-head"><h2>Sur Teliyaa ({{ onApp.length }})</h2></div>
       <ul class="list">
         <li v-for="c in onApp" :key="c.phone" class="contact-row">
-          <!-- Toucher le contact : sa fiche avec tous ses comptes, pour choisir où payer -->
+          <!-- Toucher le contact : sa fiche avec tous ses comptes ; sous chaque compte, on choisit son app -->
           <RouterLink :to="`/send/${c.match!.username}`" class="card alias choice" :aria-label="`Voir les comptes de ${label(c)}`">
             <Avatar :name="label(c)" />
             <span class="grow">
@@ -250,11 +228,8 @@ function clearAll() {
               <span class="muted small block">@{{ c.match!.username }}</span>
               <span v-if="providers(c)" class="small block ok-text">{{ providers(c) }}</span>
             </span>
+            <Icon name="chevron" :size="18" class="muted" />
           </RouterLink>
-          <!-- Raccourci : payer tout de suite avec mon app, sur le compte le plus adapté -->
-          <button type="button" class="quick-send" :aria-label="`Envoyer tout de suite à ${label(c)}`" @click="send(c)">
-            <Icon name="send" :size="20" />
-          </button>
         </li>
       </ul>
     </template>
