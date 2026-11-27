@@ -13,6 +13,19 @@ export const requestLink = (code: string) => `${base()}/r/${code}`;
 /** Lien secret vers mon profil (ouvre même un profil privé, jusqu'à sa date de fin) */
 export const secretLink = (token: string) => `${base()}/p/${token}`;
 
+/**
+ * Lien de paiement avec un montant et un motif facultatifs (mode commerçant) :
+ * teliyaa.com/u/pseudo?montant=5000&pour=Menu%20du%20jour
+ */
+export function payLink(username: string, amount: number | null, note = ''): string {
+  const params = new URLSearchParams();
+  if (amount) params.set('montant', String(amount));
+  const n = note.trim().slice(0, 60);
+  if (n) params.set('pour', n);
+  const q = params.toString();
+  return `${profileLink(username)}${q ? `?${q}` : ''}`;
+}
+
 /** Lien affiché (sans https://) */
 export const prettyLink = (url: string) => url.replace(/^https?:\/\//, '');
 

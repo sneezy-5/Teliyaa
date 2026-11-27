@@ -80,6 +80,13 @@ const copyLink = async () => toast((await copyText(link.value)) ? 'Lien copié' 
       </a>
     </nav>
 
+    <!-- Mode commerçant -->
+    <RouterLink to="/commerce" class="note info shop-promo">
+      <Icon name="store" />
+      <span class="grow"><strong>Tu vends ?</strong> Crée ton affiche QR de comptoir : tes clients paient avec Wave, Orange, MTN ou Moov.</span>
+      <Icon name="chevron" :size="18" />
+    </RouterLink>
+
     <RouterLink v-if="FEATURES.paymentDeclarations && toConfirm.length" to="/activity?tab=received" class="note info">
       <Icon name="alert" />
       <span>

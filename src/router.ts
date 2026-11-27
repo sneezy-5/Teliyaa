@@ -35,6 +35,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/send/:username', component: () => import('./pages/SendTo.vue'), meta: { private: true } },
   { path: '/profile', component: () => import('./pages/Profile.vue'), meta: { private: true } },
   { path: '/profile/visibility', component: () => import('./pages/Visibility.vue'), meta: { private: true } },
+  // Mode commerçant : affiche QR de comptoir, prix fixe
+  { path: '/commerce', component: () => import('./pages/Commerce.vue'), meta: { private: true } },
   // Back-office : pas d'adresse, il s'ouvre seulement avec Ctrl+Maj+A (voir App.vue)
 
   // Pages publiques : sans compte

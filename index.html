@@ -148,6 +148,46 @@
       }
       #vitrine .v-step p, #vitrine .v-feat p { color: var(--v-muted); }
 
+      /* Pour les commerçants : arguments + affiche de comptoir dessinée en HTML */
+      #vitrine .v-shop { display: grid; gap: 40px; align-items: center; }
+      #vitrine .v-shop h2 { margin-bottom: 16px; }
+      #vitrine .v-benefits { list-style: none; margin: 24px 0; padding: 0; display: grid; gap: 14px; }
+      #vitrine .v-benefits li { display: flex; gap: 12px; align-items: flex-start; }
+      #vitrine .v-benefits b { display: block; }
+      #vitrine .v-benefits span { color: var(--v-muted); }
+      #vitrine .v-benefits .v-tick { color: #fff; }
+      #vitrine .v-tick { flex: none; width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: var(--v-brand); color: #fff; font-weight: 800; font-size: 0.9rem; }
+      #vitrine .v-vs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 26px; font-size: 0.92rem; }
+      #vitrine .v-vs div { padding: 14px 16px; border-radius: 16px; }
+      #vitrine .v-vs .no { background: #f6f6f9; color: var(--v-muted); }
+      #vitrine .v-vs .yes { background: var(--v-soft); }
+      #vitrine .v-vs strong { display: block; margin-bottom: 6px; color: var(--v-ink); }
+      #vitrine .v-vs .yes strong { color: var(--v-brand); }
+      #vitrine .v-vs p + p { margin-top: 4px; }
+      #vitrine .v-poster {
+        justify-self: center; width: min(320px, 100%); padding: 14px 14px 12px; border-radius: 28px;
+        background: linear-gradient(135deg, var(--v-brand), var(--v-brand-2)); transform: rotate(-2deg);
+        box-shadow: 0 30px 60px -30px rgba(67, 56, 202, 0.5);
+      }
+      #vitrine .v-poster-in { background: #fff; border-radius: 20px; padding: 22px 18px; text-align: center; display: grid; gap: 6px; justify-items: center; }
+      #vitrine .v-poster-in .v-brandline { color: var(--v-brand); font-weight: 800; display: flex; align-items: center; gap: 6px; }
+      #vitrine .v-poster-in .v-brandline img { width: 22px; height: 22px; border-radius: 6px; }
+      #vitrine .v-poster-in .v-shopname { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
+      #vitrine .v-fakeqr {
+        width: 170px; height: 170px; margin: 6px 0; border-radius: 10px;
+        background: repeating-conic-gradient(#14122b 0 25%, #fff 0 50%) 0 0 / 22px 22px;
+        position: relative;
+      }
+      #vitrine .v-fakeqr::before, #vitrine .v-fakeqr::after {
+        content: ''; position: absolute; width: 44px; height: 44px; border: 9px solid #14122b; border-radius: 6px; background: #fff; top: 0;
+      }
+      #vitrine .v-fakeqr::before { left: 0; }
+      #vitrine .v-fakeqr::after { right: 0; }
+      #vitrine .v-poster-in .v-price { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+      #vitrine .v-poster-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 4px; }
+      #vitrine .v-poster-chips span { font-size: 0.7rem; font-weight: 700; padding: 4px 9px; border-radius: 999px; color: #fff; background: linear-gradient(135deg, var(--c1), var(--c2)); }
+      #vitrine .v-poster-foot { color: #fff; font-size: 0.75rem; text-align: center; padding-top: 10px; opacity: 0.95; }
+
       #vitrine .v-faq { max-width: 760px; }
       #vitrine details { border-bottom: 1px solid var(--v-line); padding: 18px 0; }
       #vitrine summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
@@ -171,6 +211,7 @@
         #vitrine .v-hero { grid-template-columns: 1.2fr 1fr; padding: 56px 0 88px; }
         #vitrine .v-grid.three { grid-template-columns: repeat(3, 1fr); }
         #vitrine .v-grid.two { grid-template-columns: repeat(2, 1fr); }
+        #vitrine .v-shop { grid-template-columns: 1.2fr 1fr; }
         #vitrine section { padding: 88px 0; }
       }
     </style>
@@ -212,6 +253,11 @@
                 "@type": "Question",
                 "name": "Faut-il un compte Teliyaa pour me payer ?",
                 "acceptedAnswer": { "@type": "Answer", "text": "Non. Ta page teliyaa.com/u/ton-pseudo s'ouvre pour tout le monde, sans compte et sans rien installer. Il suffit d'avoir une app de paiement." }
+              },
+              {
+                "@type": "Question",
+                "name": "Combien ça coûte pour un commerçant ?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Rien. Teliyaa ne prend aucune commission et ne demande ni terminal ni abonnement. Le client paie dans son app, aux conditions habituelles de son opérateur, et l'argent arrive directement sur ton compte." }
               },
               {
                 "@type": "Question",
@@ -320,7 +366,60 @@
           </div>
         </section>
 
-        <section aria-labelledby="pourquoi">
+        <section id="commercants" aria-labelledby="commerce">
+          <div class="v-wrap v-shop">
+            <div>
+              <h2 id="commerce">Tu vends ? Encaisse Wave, Orange, MTN et Moov avec une seule affiche.</h2>
+              <p class="v-lead" style="margin-bottom: 0">
+                Maquis, boutique, salon, taxi, vente sur WhatsApp : imprime ton QR Teliyaa ou mets-le en statut. Le client scanne, choisit son app et
+                te paie. Sans terminal, sans abonnement.
+              </p>
+              <ul class="v-benefits">
+                <li><span class="v-tick">1</span><p><b>Un QR pour toutes les apps</b><span>Plus besoin d'un QR par opérateur collé sur le comptoir.</span></p></li>
+                <li><span class="v-tick">2</span><p><b>L'argent arrive directement sur ton compte</b><span>Teliyaa ne garde rien : le paiement se fait dans l'app du client.</span></p></li>
+                <li><span class="v-tick">3</span><p><b>Prix fixe affiché</b><span>Une affiche par plat ou par formule : le client voit le montant avant de payer.</span></p></li>
+                <li><span class="v-tick">4</span><p><b>0 F de commission Teliyaa</b><span>Créer ton affiche est gratuit, à imprimer ou à partager en image.</span></p></li>
+              </ul>
+              <div class="v-vs">
+                <div class="no">
+                  <strong>Sans Teliyaa</strong>
+                  <p>« C'est quoi ton numéro Wave ? »</p>
+                  <p>Erreurs de numéro ou de montant</p>
+                </div>
+                <div class="yes">
+                  <strong>Avec Teliyaa</strong>
+                  <p>Une seule affiche, toutes les apps</p>
+                  <p>Le montant est déjà affiché</p>
+                </div>
+              </div>
+              <div class="v-cta">
+                <a href="/login" class="v-btn primary">Créer mon affiche gratuite</a>
+                <span class="v-note">Prête en 2 minutes</span>
+              </div>
+            </div>
+
+            <div class="v-poster" aria-hidden="true">
+              <div class="v-poster-in">
+                <span class="v-brandline"><img src="/icone-512.png" alt="" width="22" height="22" />Teliyaa</span>
+                <span class="v-shopname">Maquis Chez Awa</span>
+                <span style="color: var(--v-muted)">Scanne pour me payer</span>
+                <span class="v-fakeqr"></span>
+                <span class="v-price">2 500 FCFA</span>
+                <span style="color: var(--v-muted); font-size: 0.9rem">Menu du jour</span>
+                <span class="v-poster-chips">
+                  <span style="--c1: #1aa7e8; --c2: #0b6fc2">Wave</span>
+                  <span style="--c1: #ff8a1f; --c2: #e25c00">Orange Money</span>
+                  <span style="--c1: #ffd23f; --c2: #f5b400; color: #1f2937">MTN MoMo</span>
+                  <span style="--c1: #2563eb; --c2: #1e3a8a">Moov Money</span>
+                  <span style="--c1: #4338ca; --c2: #1e1b4b">Banques</span>
+                </span>
+              </div>
+              <p class="v-poster-foot">L'argent arrive directement sur mon compte</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="tint" aria-labelledby="pourquoi">
           <div class="v-wrap">
             <h2 id="pourquoi">Pensé pour le quotidien</h2>
             <div class="v-grid two">
@@ -344,7 +443,7 @@
           </div>
         </section>
 
-        <section class="tint" aria-labelledby="faq">
+        <section aria-labelledby="faq">
           <div class="v-wrap v-faq">
             <h2 id="faq">Questions fréquentes</h2>
             <details>
@@ -365,6 +464,13 @@
             <details>
               <summary>Faut-il un compte Teliyaa pour me payer ?</summary>
               <p>Non. Ta page teliyaa.com/u/ton-pseudo s'ouvre pour tout le monde, sans compte et sans rien installer. Il suffit d'avoir une app de paiement.</p>
+            </details>
+            <details>
+              <summary>Combien ça coûte pour un commerçant ?</summary>
+              <p>
+                Rien. Teliyaa ne prend aucune commission et ne demande ni terminal ni abonnement. Le client paie dans son app, aux conditions
+                habituelles de son opérateur, et l'argent arrive directement sur ton compte.
+              </p>
             </details>
             <details>
               <summary>Dans quels pays fonctionne Teliyaa ?</summary>

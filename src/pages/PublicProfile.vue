@@ -10,6 +10,7 @@ import QrBlock from '../components/QrBlock.vue';
 import Spinner from '../components/Spinner.vue';
 import VerifiedPill from '../components/VerifiedPill.vue';
 import { api } from '../lib/api';
+import { formatAmount, parseAmount } from '../lib/format';
 import { copyText, profileLink, shareText } from '../lib/links';
 import { session } from '../lib/session';
 import { formatUntil } from '../lib/sharing';
@@ -30,6 +31,13 @@ const isPrivate = ref(false);
 const link = computed(() => (profile.value ? profileLink(profile.value.username) : ''));
 const isMe = computed(() => Boolean(profile.value && session.profile?.username === profile.value.username));
 const myProfilePrivate = computed(() => isMe.value && session.profile?.visibility === 'private');
+/** Affiche de commerçant : ?montant=2500&pour=Menu du jour (le client voit le prix avant de payer) */
+const askedAmount = computed(() => {
+  const raw = route.query.montant;
+  const n = typeof raw === 'string' ? parseAmount(raw) : null;
+  return n && n <= 50_000_000 ? n : null;
+});
+const askedNote = computed(() => (askedAmount.value && typeof route.query.pour === 'string' ? route.query.pour.trim().slice(0, 60) : ''));
 // Ouvert avec un lien secret : on n'invite pas à le faire suivre
 const canShare = computed(() => !token.value || isMe.value);
 
@@ -104,11 +112,17 @@ const copyLink = async () => toast((await copyText(link.value)) ? 'Lien copié' 
         <button type="button" class="btn secondary" @click="copyLink"><Icon name="copy" :size="18" /> Copier le lien</button>
       </div>
 
+      <div v-if="askedAmount" class="pay-amount">
+        <span>Montant à payer</span>
+        <strong>{{ formatAmount(askedAmount) }}</strong>
+        <small v-if="askedNote" class="muted">{{ askedNote }}</small>
+      </div>
+
       <PayPanel
         v-if="!isMe"
         :profile="profile"
-        :amount="null"
-        note=""
+        :amount="askedAmount"
+        :note="askedNote"
         :favorite-provider="session.profile?.favorite_provider"
         :logged-in="Boolean(session.user && session.profile)"
       />

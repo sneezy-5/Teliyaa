@@ -113,7 +113,8 @@ async function declare() {
     <template v-else>
       <!-- v1 : simple rappel de ce qui a été copié -->
       <p v-if="!FEATURES.paymentDeclarations && usedAlias" class="note ok" role="status">
-        Alias copié : <strong>{{ aliasDisplayName(usedAlias) }} · {{ showValue(usedAlias) }}</strong>. Colle-le dans ton app, entre le montant et valide.
+        Alias copié : <strong>{{ aliasDisplayName(usedAlias) }} · {{ showValue(usedAlias) }}</strong>. Colle-le dans ton app, entre
+        {{ amount ? formatAmount(amount) : 'le montant' }} et valide.
       </p>
 
       <!-- Retour de l'app : on demande si c'est fait -->

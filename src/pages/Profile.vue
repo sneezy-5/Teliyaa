@@ -203,6 +203,16 @@ async function reset() {
       </li>
 
       <li>
+        <RouterLink to="/commerce" class="setting-row">
+          <span class="grow">
+            Mon commerce
+            <span class="muted small block">Affiche QR de comptoir, prix fixe</span>
+          </span>
+          <Icon name="chevron" :size="18" class="muted" />
+        </RouterLink>
+      </li>
+
+      <li>
         <RouterLink to="/confidentialite" class="setting-row">
           <span class="grow">Confidentialité</span>
           <Icon name="chevron" :size="18" class="muted" />
