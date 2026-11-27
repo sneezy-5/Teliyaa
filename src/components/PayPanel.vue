@@ -51,21 +51,31 @@ const showValue = (a: PublicAlias) => (a.alias_type === 'phone' ? formatPhone(a.
 /** Compte choisi à la main dans la liste (sinon on prend le plus adapté à mon app) */
 const pickedAlias = ref<PublicAlias | null>(null);
 
-/** Toucher une carte : payer sur ce compte précis, avec mon app */
+/**
+ * Toucher une carte = payer sur ce compte :
+ * - compte Wave, Orange Money, MTN, Moov : on copie l'alias et on ouvre CETTE app ;
+ * - compte bancaire : avec mon app (choisie une fois, la grille s'affiche sinon).
+ */
 function payTo(alias: PublicAlias) {
   pickedAlias.value = alias;
+  if (isPayerApp(alias.provider_id)) return payWith(alias.provider_id, false);
   if (myApp.value) return payWith(myApp.value);
-  // Je n'ai pas encore choisi mon app : la grille s'affiche plus haut, on y remonte
   choosing.value = true;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-async function payWith(providerId: string) {
+/** Ouvre l'app sur cette carte : « Ouvrir Wave », etc. ; banque : « Payer » */
+const payLabelFor = (a: PublicAlias) => (isPayerApp(a.provider_id) ? `Ouvrir ${getProvider(a.provider_id).name}` : 'Payer');
+
+/** `remember` : retenir cette app comme « mon app » (choix fait dans la grille) */
+async function payWith(providerId: string, remember = true) {
   const alias = pickedAlias.value ?? aliasFor(props.profile.aliases, providerId);
   pickedAlias.value = null;
   if (!alias) return;
-  rememberApp(providerId);
-  myApp.value = providerId;
+  if (remember) {
+    rememberApp(providerId);
+    myApp.value = providerId;
+  }
   choosing.value = false;
   usedProvider.value = providerId;
   usedAlias.value = alias;
@@ -139,17 +149,9 @@ async function declare() {
         <button type="button" class="btn ghost" @click="awaiting = false">Pas encore</button>
       </div>
 
-      <!-- Un seul bouton quand on connaît mon app -->
-      <template v-else-if="myApp && !choosing">
-        <button type="button" class="btn big" @click="payWith(myApp)">
-          <ProviderBadge :provider-id="myApp" /> Payer avec {{ getProvider(myApp).name }}
-        </button>
-        <button type="button" class="link-btn center" @click="choosing = true">Payer avec une autre app</button>
-      </template>
-
-      <!-- Première fois : je choisis mon app (retenue ensuite) -->
-      <template v-else>
-        <h2>Payer avec…</h2>
+      <!-- Compte bancaire touché sans app connue : je choisis mon app (retenue ensuite) -->
+      <div v-else-if="choosing" class="card stack">
+        <h2>Payer avec quelle app ?</h2>
         <p v-if="pickedAlias" class="muted small">Vers {{ aliasDisplayName(pickedAlias) }} · {{ showValue(pickedAlias) }}</p>
         <div class="app-grid">
           <button v-for="p in apps" :key="p.id" type="button" class="app-tile" @click="payWith(p.id)">
@@ -157,8 +159,8 @@ async function declare() {
             <span>{{ p.name }}</span>
           </button>
         </div>
-        <p class="muted small">L'alias de {{ firstName }} est copié et ton app s'ouvre. Ton choix est retenu pour la prochaine fois.</p>
-      </template>
+        <button type="button" class="link-btn center" @click="(choosing = false), (pickedAlias = null)">Annuler</button>
+      </div>
 
       <div class="note warn">
         <Icon name="alert" />
@@ -169,9 +171,9 @@ async function declare() {
       </div>
 
       <div class="section-head"><h2>Comptes de {{ firstName }}</h2></div>
-      <p v-if="profile.aliases.length > 1" class="muted small" style="margin-top: -8px">Touche un compte pour payer dessus.</p>
+      <p class="muted small" style="margin-top: -8px">Choisis un compte : son alias est copié et l'app s'ouvre. Il ne reste qu'à coller et valider.</p>
       <ul class="acct-list">
-        <li v-for="a in profile.aliases" :key="a.id"><AliasCard :alias="a" pay-label="Payer" @pay="payTo(a)" /></li>
+        <li v-for="a in profile.aliases" :key="a.id"><AliasCard :alias="a" :pay-label="payLabelFor(a)" @pay="payTo(a)" /></li>
       </ul>
     </template>
   </div>

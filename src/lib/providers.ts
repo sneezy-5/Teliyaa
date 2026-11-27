@@ -58,7 +58,8 @@ export const PROVIDERS: Provider[] = [
   {
     // « MoMo App » (MTN Group Fintech) — Play Store confirmé ; App Store à vérifier
     id: 'mtn-momo', name: 'MTN MoMo', kind: 'wallet', short: 'MTN', verified: false, card: ['#ffd23f', '#f5b400'], cardInk: '#1f2937', logo: logo('mtn-momo'),
-    androidPackage: 'mtnft.momo.consumer', playStoreUrl: play('mtnft.momo.consumer'),
+    androidPackage: 'mtnft.momo.consumer',
+    playStoreUrl: 'https://play.google.com/store/apps/details?id=mtnft.momo.consumer&pcampaignid=web_share',
     appStoreUrl: 'https://apps.apple.com/app/id6532622230'
   },
   {
