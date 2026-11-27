@@ -1,6 +1,7 @@
 import { adminRoutes } from './admin.js';
 import { track } from './audit.js';
 import { logout, requestCode, verifyCode } from './auth.js';
+import { config } from './config.js';
 import { pool, tx } from './db.js';
 import { HttpError, rateLimiter } from './http.js';
 import { resetPin, setPin, verifyPin } from './pin.js';
@@ -24,7 +25,8 @@ const PUBLIC_ALIAS_COLS =
 const LOOKUP_BATCH = 500;
 const LOOKUP_DAILY = 10_000;
 
-const codeByIp = rateLimiter({ max: 20, windowMs: 60 * 60 * 1000 });
+// Large : chez les opérateurs mobiles, beaucoup de clients partagent la même adresse IP
+const codeByIp = rateLimiter({ max: 60, windowMs: 60 * 60 * 1000 });
 const verifyByIp = rateLimiter({ max: 30, windowMs: 15 * 60 * 1000 });
 const publicByIp = rateLimiter({ max: 120, windowMs: 60 * 1000 });
 const searchByUser = rateLimiter({ max: 60, windowMs: 60 * 1000 });
@@ -70,8 +72,9 @@ export const routes = [
     path: '/api/auth/code',
     async handler(ctx) {
       const { body, ip } = ctx;
-      codeByIp(`code:${ip}`);
       const phone = requirePhone(body.phone);
+      // L'admin n'est pas freiné par la limite par adresse IP (réseau partagé, tests…)
+      if (!config.adminPhones.includes(phone)) codeByIp(`code:${ip}`);
       const channel = pickChannel(body.channel);
       if (!channel) throw new HttpError(400, 'Ce moyen de recevoir le code n’est pas disponible.');
       await track(ctx, 'otp_request', { target: phone, meta: { channel } });

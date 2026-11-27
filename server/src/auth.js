@@ -38,15 +38,21 @@ async function refuseIfBlocked(phone) {
 export async function requestCode(phone, ip, channel) {
   await refuseIfBlocked(phone);
   if (isReview(phone)) return;
-  // Limites par numéro : 3 codes / 15 min, 10 / jour
+  // Limites par numéro, par paliers (on attend 15 min ou 1 h plutôt qu'une journée) :
+  // 5 codes / 15 min, 10 / heure, 30 / jour.
+  // Admin (ADMIN_PHONES) : seulement 5 / 15 min, pour ne jamais être bloqué dehors
+  // (on garde ce palier car n'importe qui peut taper ce numéro pour le spammer).
+  const admin = config.adminPhones.includes(phone);
   const { rows } = await pool.query(
     `select count(*) filter (where created_at > now() - interval '15 minutes')::int as recent,
+            count(*) filter (where created_at > now() - interval '1 hour')::int as hour,
             count(*) filter (where created_at > now() - interval '1 day')::int as today
        from otp_sends where phone = $1`,
     [phone]
   );
-  if (rows[0].recent >= 3) throw new HttpError(429, 'Trop de codes demandés. Réessaie dans 15 minutes.');
-  if (rows[0].today >= 10) throw new HttpError(429, 'Trop de codes demandés aujourd’hui. Réessaie demain.');
+  if (rows[0].recent >= 5) throw new HttpError(429, 'Trop de codes demandés. Réessaie dans 15 minutes.');
+  if (!admin && rows[0].hour >= 10) throw new HttpError(429, 'Trop de codes demandés. Réessaie dans une heure.');
+  if (!admin && rows[0].today >= 30) throw new HttpError(429, 'Trop de codes demandés aujourd’hui. Réessaie demain.');
 
   const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
   await pool.query(
